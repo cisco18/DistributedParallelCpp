@@ -1,2 +1,2 @@
 tsp: tsp.c
-	gcc $^ -o tsp
+	gcc $^ -o3 tsp
