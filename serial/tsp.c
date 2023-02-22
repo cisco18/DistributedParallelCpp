@@ -11,15 +11,19 @@ int computLB();
 // priority_queue_t *queueS;
 
 int main(int argc, char *argv[]) {
+    int numCities, numRoads;
     FILE* file_handle;
     file_handle = fopen(argv[1], "r");
 
     if(file_handle == NULL) {
       printf("Error!");
       exit(1);
-   }
+    }
 
-    
+    fscanf(file_handle,"%d %d", &numCities, &numRoads);
+    printf("Number of cities: %d\n", numCities);
+    printf("Number of roads: %d\n", numRoads);
+
 
     // int val = computeFirstLB();
     fclose(file_handle);
