@@ -79,7 +79,12 @@ void parse_inputs(int argc, char *argv[]) {
 }
 
 void tsp() {
-
+    for(int i=0; i<numCities; i++) {
+        for(int j=0; j<numCities; j++) {
+            printf("%d ", distances[i][j]);
+        }
+        printf("\n");
+    }
 
     // free allocated space for distances
     for(int i=0; i<numCities; i++) {
