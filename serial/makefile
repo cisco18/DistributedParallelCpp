@@ -10,8 +10,8 @@ all: queue.o tsp
 queue.o: queue.c
 	gcc -c queue.c
 
-tsp: queue.h queue.o tsp.c
-	gcc -g -Wall -o tsp queue.o tsp.c
+tsp: queue.h queue.o tsp.c tsp.h
+	gcc -g -Wall -o tsp queue.o tsp.c tsp.h
 
 clean:
 	-rm -f tsp *.o

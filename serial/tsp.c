@@ -1,48 +1,85 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "queue.h"
-
-int computeFirstLB();
-int computLB();
-
-// Global variables
-// priority_queue_t *queueS;
+#include "tsp.h"
 
 int main(int argc, char *argv[]) {
-    int numCities, numRoads;
-    FILE* file_handle;
-    file_handle = fopen(argv[1], "r");
+    // double exec_time;
 
-    if(file_handle == NULL) {
-      printf("Error!");
+    parse_inputs(argc, argv);
+
+    // exec_time = -omp_get_wtime();
+
+    tsp();
+
+    // exec_time += omp_get_wtime();
+
+    // fprintf(stderr, "%.1fs\n", exec_time);
+    print_result(); // to the stdout!
+}
+
+void parse_inputs(int argc, char *argv[]) {
+    FILE* fp;
+    size_t  line_buffer_size=0;
+    char *line_buffer = NULL;
+    int row, col, val;
+
+    if(argc-1 != 2) {
+        printf("There must be 2 inputs!\n");
+        exit(-1);
+    }
+
+    maxValue = atoi(argv[2]);
+    printf("Maximum accepted value: %d\n", maxValue);
+
+    // open input file
+    fp = fopen(argv[1], "r");
+    if(fp == NULL) {
+      printf("Error: unable to open input file");
       exit(1);
     }
 
-    fscanf(file_handle,"%d %d", &numCities, &numRoads);
+    // read input file
+    getline(&line_buffer, &line_buffer_size, fp);
+    sscanf(line_buffer, "%d %d", &numCities, &numRoads);
     printf("Number of cities: %d\n", numCities);
     printf("Number of roads: %d\n", numRoads);
+    // allocate space for the distances
+    distances = (int**)malloc(numCities*sizeof(int *));
+    for(int i=0; i<numCities; i++) {
+        distances[i] = (int*)malloc(numCities*sizeof(int));
+    }
+    // initialize distances matrix
+    for(int i=0; i<numCities; i++) {
+        for(int j=0; j<numCities; j++) {
+            distances[i][j] = -1;
+        }
+    }
+    // fill distances matrix
+    for(int i=0; i<numRoads; i++) {
+        getline(&line_buffer, &line_buffer_size, fp);
+        sscanf(line_buffer, "%d %d %d", &row, &col, &val);
+        // printf("%d %d %d\n", row, col, val);
+        distances[row][col] = val;
+        distances[col][row] = val;
+    }
+    free(line_buffer);
 
+    for(int i=0; i<numCities; i++) {
+        for(int j=0; j<numCities; j++) {
+            printf("%d ", distances[i][j]);
+        }
+        printf("\n");
+    }
 
-    // int val = computeFirstLB();
-    fclose(file_handle);
-    return 0;
+    // close input file
+    fclose(fp);
 }
 
-// void TSPBB(int distances[][], int numberOfCities,int BestTourCost) {
-//     int currentCity = 0;    
-//     int tour[100];  //later we need a specific number
-//     int lowerBound = computeFirstLB(); //dont know what yet
+void tsp() {
 
-//     tour[0] = 0;
+}
 
-//     while (queueS->size > 0){
-//         // int[] tour,int cost, int bound,int length, int currentCity} = queue_pop(queueS);
-//         // if(bound<)
-//     }
+void print_result() {
 
-// }
+}
 
 int computeFirstLB() {
     // int min1=queueS->buffer[0], min2=queueS->buffer[1];

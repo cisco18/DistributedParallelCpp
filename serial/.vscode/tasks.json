@@ -7,7 +7,7 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "queue.c queue.h tsp.c tsp.h",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],
