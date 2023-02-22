@@ -8,8 +8,6 @@
 void parse_inputs();
 void tsp();
 void print_result();
-int computeFirstLB();
-int computLB();
 
 // Global variables
 int maxValue;
