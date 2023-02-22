@@ -21,13 +21,15 @@ void parse_inputs(int argc, char *argv[]) {
     char *line_buffer = NULL;
     int row, col, val;
 
+    // check number of arguments
     if(argc-1 != 2) {
         printf("There must be 2 inputs!\n");
         exit(-1);
     }
 
+    // save maximum accepted value
     maxValue = atoi(argv[2]);
-    printf("Maximum accepted value: %d\n", maxValue);
+    // printf("Maximum accepted value: %d\n", maxValue);
 
     // open input file
     fp = fopen(argv[1], "r");
@@ -64,7 +66,7 @@ void parse_inputs(int argc, char *argv[]) {
         distances[col][row] = val;
     }
 
-
+    // free allocated space for line buffer
     free(line_buffer);
 
     // for(int i=0; i<numCities; i++) {
@@ -78,8 +80,89 @@ void parse_inputs(int argc, char *argv[]) {
     fclose(fp);
 }
 
+int initialLB() {
+    int min1, min2;
+    int LB=0;
+
+    for(int i=0; i<numCities; i++) {
+        min1 = maxValue;
+        min2 = maxValue;
+        for (int j=0; j<numCities; j++) {
+            if(distances[i][j] > 0) {
+                if(distances[i][j] <= min1) {
+                    min2 = min1;
+                    min1 = distances[i][j];
+                }else if(distances[i][j] <= min2) {
+                    min2 = distances[i][j];
+                }
+            }
+        }
+        LB += (min1+min2)/2;
+    }
+    return LB;
+}
+
+int calculateLB(int f, int t, int LB) {
+    int newLB;
+    int cf, ct;
+    int min1, min2;
+
+    min1 = maxValue;
+    min2 = maxValue;
+    for (int j=0; j<numCities; j++) {
+        if(distances[f][j] > 0) {
+            if(distances[f][j] <= min1) {
+                min2 = min1;
+                min1 = distances[f][j];
+            }else if(distances[f][j] <= min2) {
+                min2 = distances[f][j];
+            }
+        }
+    }
+    if(distances[f][t] >= min2) {
+        cf = min2;
+    }else {
+        cf = min1;
+    }
+
+    min1 = maxValue;
+    min2 = maxValue;
+    for (int j=0; j<numCities; j++) {
+        if(distances[t][j] > 0) {
+            if(distances[t][j] <= min1) {
+                min2 = min1;
+                min1 = distances[t][j];
+            }else if(distances[t][j] <= min2) {
+                min2 = distances[t][j];
+            }
+        }
+    }
+    if(distances[f][t] >= min2) {
+        ct = min2;
+    }else {
+        ct = min1;
+    }
+
+    newLB = LB + distances[f][t] - (cf+ct)/2;
+
+    return newLB;
+}
+
 void tsp() {
-    
+    priority_queue_t *queue;
+    int *tour;
+    int LB;
+
+    // calculate initial lower bound on tsp tour cost
+    LB = initialLB();
+    printf("Initial lower bound: %d\n", LB);
+
+    // initialize tour starting in city 0
+    tour = (int*)malloc(numRoads*sizeof(int));
+    tour[0] = 0;
+
+    // initialize queue
+    // queue = queue_create();
 
     // free allocated space for distances
     for(int i=0; i<numCities; i++) {

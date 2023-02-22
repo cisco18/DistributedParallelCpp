@@ -6,6 +6,8 @@
 #include "queue.h"
 
 void parse_inputs();
+int initialLB();
+int calculateLB(int f, int t, int LB);
 void tsp();
 void print_result();
 
