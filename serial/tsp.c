@@ -154,36 +154,30 @@ char compare_values(void *a, void *b) {
     return num_a > num_b;
 }
 
-void print_double(FILE* fp, void* num) {
-    fprintf(fp, "%lf ", *(double*)num);
-}
-
 void tsp() {
     priority_queue_t *queue;
-    int *tour;
-    int LB;
+    queue_element *element;
 
-    // calculate initial lower bound on tsp tour cost
-    LB = initialLB();
-    printf("Initial lower bound: %d\n", LB);
-
-    // initialize tour starting in city 0
-    tour = (int*)malloc(numRoads*sizeof(int));
-    tour[0] = 0;
+    // initialize the queue elemente starting in city 0
+    element = create_element(numRoads, initialLB());
 
     // initialize queue
     queue = queue_create(&compare_values);
 
-    // // push tour to queue
-    // queue_push(queue, &tour[0]);
+    // push tour to queue
+    queue_push(queue, &element);
     
-    // FILE* fp = fopen("queue.txt", "w");
-    // queue_print(queue, fp, &print_double);
-    // fclose(fp);
+    FILE* fp = stdout;
+    queue_print(queue, fp, &print_element);
+    fclose(fp);
 
-    while(queue->size) {
-        // pop 
-    }
+    // void *node = queue_pop(queue);
+
+    // printf("buffer: %s", node);
+
+    // while(queue->size) {
+        
+    // }
     
     // free allocated space for distances
     for(int i=0; i<numCities; i++) {

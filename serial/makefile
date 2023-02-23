@@ -5,13 +5,16 @@
 #  -Wall  - this flag is used to turn on most compiler warnings
 
 # The build target
-all: queue.o tsp
+all: queue.o element.o tsp
 
-queue.o: queue.c
+queue.o: queue.c queue.h
 	gcc -c queue.c
 
-tsp: queue.h queue.o tsp.c tsp.h
-	gcc -g -Wall -o tsp queue.o tsp.c tsp.h
+element.o: element.c element.h
+	gcc -c element.c element.h
+
+tsp: queue.o element.o tsp.c tsp.h
+	gcc -g -Wall -o tsp queue.o element.o tsp.c tsp.h
 
 clean:
 	-rm -f tsp *.o
