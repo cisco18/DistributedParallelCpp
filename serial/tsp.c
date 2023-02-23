@@ -38,14 +38,14 @@ void parse_inputs(int argc, char *argv[]) {
       exit(1);
     }
 
-    // read input file
+    // read first line of input file
     getline(&line_buffer, &line_buffer_size, fp);
     sscanf(line_buffer, "%d %d", &numCities, &numRoads);
     // printf("Number of cities: %d\n", numCities);
     // printf("Number of roads: %d\n", numRoads);
 
     // allocate space for the distances
-    distances = (int**)malloc(numCities*sizeof(int *));
+    distances = (int**)malloc(numCities*sizeof(int*));
     for(int i=0; i<numCities; i++) {
         distances[i] = (int*)malloc(numCities*sizeof(int));
     }
@@ -148,6 +148,16 @@ int calculateLB(int f, int t, int LB) {
     return newLB;
 }
 
+char compare_values(void *a, void *b) {
+    double num_a = *(double*)a;
+    double num_b = *(double*)b;
+    return num_a > num_b;
+}
+
+void print_double(FILE* fp, void* num) {
+    fprintf(fp, "%lf ", *(double*)num);
+}
+
 void tsp() {
     priority_queue_t *queue;
     int *tour;
@@ -162,8 +172,19 @@ void tsp() {
     tour[0] = 0;
 
     // initialize queue
-    // queue = queue_create();
+    queue = queue_create(&compare_values);
 
+    // // push tour to queue
+    // queue_push(queue, &tour[0]);
+    
+    // FILE* fp = fopen("queue.txt", "w");
+    // queue_print(queue, fp, &print_double);
+    // fclose(fp);
+
+    while(queue->size) {
+        // pop 
+    }
+    
     // free allocated space for distances
     for(int i=0; i<numCities; i++) {
         free(distances[i]);

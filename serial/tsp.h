@@ -8,6 +8,8 @@
 void parse_inputs();
 int initialLB();
 int calculateLB(int f, int t, int LB);
+char compare_values(void *a, void *b);
+void print_double(FILE* fp, void* num);
 void tsp();
 void print_result();
 
