@@ -1,10 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <omp.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
 
-#include "queue.h"
-#include "element.h"
+// #include "queue.hpp"
 
 void parse_inputs(int argc, char *argv[]);
 int initialLB();
@@ -13,7 +12,6 @@ char compare_values(void *a, void *b);
 void tsp();
 void print_result();
 
-// Global variables
+// global variables
 int maxValue;
 int numCities, numRoads;
-int **distances;
