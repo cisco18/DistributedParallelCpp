@@ -1,22 +1,5 @@
 #include "tsp.h"
 
-// struct QueueElem queueElem; 
-
-QueueElem initQueueElem(vector<int> tour, int cost, int bound, int lenght, int currentCity) {
-    QueueElem elem =  {tour, cost, bound, lenght, currentCity};
-    return elem;
-}
-
-void printQueueElem(QueueElem myElem) {
-    cout << "Tour: ";
-    for(int i=0; i<myElem.length; i++) {
-        cout << myElem.tour.at(i) << " ";
-    }
-    cout << endl;
-    cout << "Cost: " << myElem.cost << endl;
-    cout << "Bound: " << myElem.bound << endl;
-}
-
 int main(int argc, char *argv[]) {
     // double exec_time;
 
@@ -24,12 +7,12 @@ int main(int argc, char *argv[]) {
 
     // exec_time = -omp_get_wtime();
 
-    tsp();
+    pair<vector <int>, int> results = tsp();
 
     // exec_time += omp_get_wtime();
 
     // fprintf(stderr, "%.1fs\n", exec_time);
-    print_result(); // to the stdout!
+    print_result(results.first, results. second); // to the stdout!
 }
 
 void parse_inputs(int argc, char *argv[]) {
@@ -76,7 +59,7 @@ void parse_inputs(int argc, char *argv[]) {
     //     cout << endl;
     // }
 
-    maxValue = atoi(argv[2]);
+    BestTourCost = atoi(argv[2]);
 }
 
 pair<int, int> compareCost(int cost, pair<int, int> min) {
@@ -97,8 +80,8 @@ int initialLB() {
     int LB=0;
 
     for(int i=0; i<numCities; i++) {
-        min.first = maxValue;
-        min.second = maxValue;
+        min.first = BestTourCost;
+        min.second = BestTourCost;
         for (int j=0; j<numCities; j++) {
             cost = distances.at(i).at(j);
             min = compareCost(cost, min);
@@ -115,8 +98,8 @@ int calculateLB(int f, int t, int LB) {
     int cost;
     int directCost = distances[f][t];
 
-    min.first = maxValue;
-    min.second = maxValue;
+    min.first = BestTourCost;
+    min.second = BestTourCost;
     for (int j=0; j<numCities; j++) {
         cost = distances.at(f).at(j);
         min = compareCost(cost, min);
@@ -127,8 +110,8 @@ int calculateLB(int f, int t, int LB) {
         cf = min.first;
     }
 
-    min.first = maxValue;
-    min.second = maxValue;
+    min.first = BestTourCost;
+    min.second = BestTourCost;
     for (int j=0; j<numCities; j++) {
         cost = distances.at(t).at(j);
         min = compareCost(cost, min);
@@ -144,25 +127,74 @@ int calculateLB(int f, int t, int LB) {
     return newLB;
 }
 
-char compare_values(void *a, void *b) {
-    double num_a = *(double*)a;
-    double num_b = *(double*)b;
-    return num_a > num_b;
+// char compare_values(void *a, void *b) {
+//     double num_a = *(double*)a;
+//     double num_b = *(double*)b;
+//     return num_a > num_b;
+// }
+
+int isInNode(int val, QueueElem node) {
+    for(int i=0; i<node.length; i++) {
+        if(node.tour[i] == val) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
-void tsp() {
+pair<vector <int>, int> tsp() {
     PriorityQueue<QueueElem> myQueue;
+
     vector <int> tour = {0};
     QueueElem firstElem = initQueueElem(tour, 0, initialLB(), 1, 0);
-    // printQueueElem(firstElem);
+
+    QueueElem myElem;
+    vector <int> BestTour = tour;
+
+    QueueElem newElem;
+    int newBound, newCost;
+    vector <int> newTour;
+
     myQueue.push(firstElem);
-    myQueue.print(&printQueueElem);
-    // while(myQueue.size>0){
-    //      myQueue.pop();
-    // }
+
+    while(myQueue.size() > 0){
+        myElem = myQueue.pop();
+        printQueueElem(myElem);
+        cout << endl;
+        if(myElem.bound >= BestTourCost) {
+            return make_pair(BestTour, BestTourCost);
+        }
+        if(myElem.length == numCities) {
+            if(myElem.cost + distances.at(myElem.node).at(0) <= BestTourCost) {
+                BestTour = myElem.tour;
+                BestTour.push_back(0);
+                BestTourCost = myElem.cost + distances.at(myElem.node).at(0);
+            }
+        }else {
+            for(int v=0; v<numCities; v++) {
+                if(v != myElem.node && isInNode(v, myElem) == 0) {
+                    newBound = calculateLB(myElem.node, v, myElem.bound);
+                    if(newBound <= BestTourCost) {
+                        newTour = myElem.tour;
+                        newTour.push_back(v);
+                        newCost = myElem.cost + distances.at(myElem.node).at(v);
+                        newElem = initQueueElem(newTour, newCost, newBound, myElem.length+1, v);
+                        myQueue.push(newElem);
+                        // printQueueElem(newElem);
+                        // cout << endl;
+                    }
+                }
+            }
+        }
+    }
+    return make_pair(BestTour, BestTourCost);
 }
 
-void print_result() {
-    
-    
+void print_result(vector <int> BestTour, int BestTourCost) {
+    cout << "BestTour: ";
+    for(int i=0; i<numCities; i++) {
+        cout << BestTour.at(i) << " ";
+    }
+    cout << endl;
+    cout << "BestTourCost: " << BestTourCost << endl;
 }

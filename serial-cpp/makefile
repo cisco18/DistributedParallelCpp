@@ -5,13 +5,16 @@
 #  -Wall  - this flag is used to turn on most compiler warnings
 
 # The build target
-all: tsp tsp.o
+all: tsp tsp.o element.o
 
 tsp.o: tsp.cpp tsp.h
-	gcc -c tsp.cpp
+	g++ -c tsp.cpp
 
-tsp: tsp.o
-	g++ -g -Wall -o tsp tsp.o
+element.o: element.cpp element.h
+	g++ -c element.cpp
+
+tsp: tsp.o element.o
+	g++ -g -Wall -o tsp tsp.o element.o
 
 clean:
 	-rm -f tsp *.o
