@@ -22,9 +22,9 @@
 //
 // Note: this structure assumes that the operator ">" is defined for "T", i.e., for the struct/class "T",
 // struct T {
-// friend bool operator>(T left, T right) { return left > right; }			// Change here how the elements compare to each other
-// }
-//
+// friend bool operator>(T left, T right) { return left.length > right.length; }			// Change here how the elements compare to each other
+// };
+
 template<typename T>
 class PriorityQueue
 {
