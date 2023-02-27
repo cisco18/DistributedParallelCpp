@@ -14,7 +14,7 @@ element.o: element.cpp element.h
 	g++ -c element.cpp
 
 tsp: tsp.o element.o
-	g++ -g -Wall -o tsp tsp.o element.o
+	g++ -g -Wall -o tsp -fopenmp tsp.o element.o
 
 clean:
 	-rm -f tsp *.o

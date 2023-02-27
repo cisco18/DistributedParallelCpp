@@ -1,17 +1,19 @@
 #include "tsp.h"
+#include <omp.h>
 
 int main(int argc, char *argv[]) {
-    // double exec_time;
+    double exec_time;
 
     parse_inputs(argc, argv);
 
-    // exec_time = -omp_get_wtime();
+    exec_time = -omp_get_wtime();
 
     pair<vector <int>, int> results = tsp();
 
-    // exec_time += omp_get_wtime();
+    exec_time += omp_get_wtime();
 
-    // fprintf(stderr, "%.1fs\n", exec_time);
+    cout << "Serial execution time: " << exec_time << endl;
+
     print_result(results.first, results. second); // to the stdout!
 }
 
