@@ -38,7 +38,7 @@ void parse_inputs(int argc, char *argv[]) {
         // cout << "Unable to open file"; 
         exit(-1);
     for(int i=0; i<numCities; i++) {
-        vector <double> ones(numCities, -1);
+        vector <double> ones(numCities, -1.0);
         distances.push_back(ones);
     }
     
@@ -69,15 +69,15 @@ pair<double, double> compareCost(double cost, pair<double, double> min) {
 
 double initialLB() {
     pair<double, double> min;
-    double cost;
     double LB=0;
 
     for(int i=0; i<numCities; i++) {
         min.first = BestTourCost;
         min.second = BestTourCost;
         for (int j=0; j<numCities; j++) {
-            cost = distances.at(i).at(j);
-            min = compareCost(cost, min);
+            if(distances.at(i).at(j) > 0) {
+                min = compareCost(distances.at(i).at(j), min);
+            }
         }
         LB += (min.first+min.second)/2;
     }
@@ -88,14 +88,17 @@ double calculateLB(int f, int t, double LB) {
     double newLB;
     double cf, ct;
     pair<double, double> min;
-    double cost;
     double directCost = distances[f][t];
+    if(distances[f][t] <= 0) {
+        cout << "ERROR";
+    }
 
     min.first = BestTourCost;
     min.second = BestTourCost;
     for (int j=0; j<numCities; j++) {
-        cost = distances.at(f).at(j);
-        min = compareCost(cost, min);
+        if(distances.at(f).at(j) > 0) {
+            min = compareCost(distances.at(f).at(j), min);
+        }
     }
     if(directCost >= min.second) {
         cf = min.second;
@@ -106,8 +109,9 @@ double calculateLB(int f, int t, double LB) {
     min.first = BestTourCost;
     min.second = BestTourCost;
     for (int j=0; j<numCities; j++) {
-        cost = distances.at(t).at(j);
-        min = compareCost(cost, min);
+        if(distances.at(t).at(j) > 0) {
+            min = compareCost(distances.at(t).at(j), min);
+        }
     }
     if(directCost >= min.second) {
         ct = min.second;
@@ -150,21 +154,25 @@ pair<vector <int>, double> tsp() {
             return make_pair(BestTour, BestTourCost);
         }
         if(myElem.length == numCities) {
-            if(myElem.cost + distances.at(myElem.node).at(0) <= BestTourCost) {
-                BestTour = myElem.tour;
-                BestTour.push_back(0);
-                BestTourCost = myElem.cost + distances.at(myElem.node).at(0);
+            if(distances.at(myElem.node).at(0) > 0) {
+                if(myElem.cost + distances.at(myElem.node).at(0) <= BestTourCost) {
+                    BestTour = myElem.tour;
+                    BestTour.push_back(0);
+                    BestTourCost = myElem.cost + distances.at(myElem.node).at(0);
+                }
             }
         }else {
             for(int v=0; v<numCities; v++) {
                 if(v != myElem.node && isInNode(v, myElem) == 0) {
-                    newBound = calculateLB(myElem.node, v, myElem.bound);
-                    if(newBound <= BestTourCost) {
-                        newTour = myElem.tour;
-                        newTour.push_back(v);
-                        newCost = myElem.cost + distances.at(myElem.node).at(v);
-                        newElem = initQueueElem(newTour, newCost, newBound, myElem.length+1, v);
-                        myQueue.push(newElem);
+                    if(distances.at(myElem.node).at(v) > 0) {
+                        newBound = calculateLB(myElem.node, v, myElem.bound);
+                        if(newBound <= BestTourCost) {
+                            newTour = myElem.tour;
+                            newTour.push_back(v);
+                            newCost = myElem.cost + distances.at(myElem.node).at(v);
+                            newElem = initQueueElem(newTour, newCost, newBound, myElem.length+1, v);
+                            myQueue.push(newElem);
+                        }
                     }
                 }
             }
