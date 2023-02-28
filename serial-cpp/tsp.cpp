@@ -15,6 +15,8 @@ int main(int argc, char *argv[]) {
     cout << "Serial execution time: " << exec_time << endl;
 
     print_result(results.first, results. second); // to the stdout!
+
+    return 0;
 }
 
 void parse_inputs(int argc, char *argv[]) {
@@ -54,6 +56,8 @@ void parse_inputs(int argc, char *argv[]) {
         myfile.close();
     }else 
         cout << "Unable to open file";
+    
+    myfile.close();
 
     // for(int i=0; i<numCities; i++) {
     //     for(int j=0; j<numCities; j++) {
