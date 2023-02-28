@@ -8,13 +8,13 @@
 all: tsp tsp.o element.o
 
 tsp.o: tsp.cpp tsp.h
-	g++ -c tsp.cpp
+	g++ -c -O3 tsp.cpp
 
 element.o: element.cpp element.h
-	g++ -c element.cpp
+	g++ -c -O3 element.cpp
 
 tsp: tsp.o element.o
-	g++ -g -Wall -o tsp -fopenmp tsp.o element.o
+	g++ -g -Wall -O3 -o tsp -fopenmp tsp.o element.o
 
 clean:
 	-rm -f tsp *.o

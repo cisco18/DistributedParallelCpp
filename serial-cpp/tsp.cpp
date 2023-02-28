@@ -26,27 +26,22 @@ void parse_inputs(int argc, char *argv[]) {
     int row, col;
     double val;
 
-    // check number of arguments
     if(argc-1 != 2) {
-        // printf("There must be 2 inputs!\n");
+        // cout << "There must be 2 inputs!\n";
         exit(-1);
     }
 
-    // get first line of file with number of cities and roads
     if (myfile.is_open()){
         getline(myfile, line);
         sscanf(line.c_str(), "%d %d", &numCities, &numRoads);
     }else
-        cout << "Unable to open file"; 
-    // cout << "Cities: " << numCities << "\nRoads: " << numRoads << "\n";
-
-    // initialize distances matrix
+        // cout << "Unable to open file"; 
+        exit(-1);
     for(int i=0; i<numCities; i++) {
         vector <double> ones(numCities, -1);
         distances.push_back(ones);
     }
     
-    // get the distances between cities
     if (myfile.is_open()){
         while (getline(myfile, line)) {
             sscanf(line.c_str(), "%d %d %lf", &row, &col, &val);
@@ -56,15 +51,6 @@ void parse_inputs(int argc, char *argv[]) {
         myfile.close();
     }else 
         cout << "Unable to open file";
-    
-    myfile.close();
-
-    // for(int i=0; i<numCities; i++) {
-    //     for(int j=0; j<numCities; j++) {
-    //         cout << distances.at(i).at(j) << " ";
-    //     }
-    //     cout << endl;
-    // }
 
     BestTourCost = atof(argv[2]);
 }
@@ -134,12 +120,6 @@ double calculateLB(int f, int t, double LB) {
     return newLB;
 }
 
-// char compare_values(void *a, void *b) {
-//     double num_a = *(double*)a;
-//     double num_b = *(double*)b;
-//     return num_a > num_b;
-// }
-
 int isInNode(int val, QueueElem node) {
     for(int i=0; i<node.length; i++) {
         if(node.tour[i] == val) {
@@ -165,12 +145,6 @@ pair<vector <int>, double> tsp() {
     myQueue.push(firstElem);
 
     while(myQueue.size() > 0){
-        // printQueueElem(myElem);
-        // cout << endl;
-        // cout << "Print queue:" << endl;
-        // myQueue.print(&printQueueElem);
-        // cout << endl;
-        // cout << endl;
         myElem = myQueue.pop();
         if(myElem.bound >= BestTourCost) {
             return make_pair(BestTour, BestTourCost);
@@ -191,8 +165,6 @@ pair<vector <int>, double> tsp() {
                         newCost = myElem.cost + distances.at(myElem.node).at(v);
                         newElem = initQueueElem(newTour, newCost, newBound, myElem.length+1, v);
                         myQueue.push(newElem);
-                        // printQueueElem(newElem);
-                        // cout << endl;
                     }
                 }
             }
