@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    pair<vector <int>, int> results = tsp();
+    pair<vector <int>, double> results = tsp();
 
     exec_time += omp_get_wtime();
 
@@ -21,7 +21,8 @@ void parse_inputs(int argc, char *argv[]) {
     string line;
     ifstream myfile (argv[1]);
 
-    int row, col, val;
+    int row, col;
+    double val;
 
     // check number of arguments
     if(argc-1 != 2) {
@@ -39,14 +40,14 @@ void parse_inputs(int argc, char *argv[]) {
 
     // initialize distances matrix
     for(int i=0; i<numCities; i++) {
-        vector <int> ones(numCities, -1);
+        vector <double> ones(numCities, -1);
         distances.push_back(ones);
     }
     
     // get the distances between cities
     if (myfile.is_open()){
         while (getline(myfile, line)) {
-            sscanf(line.c_str(), "%d %d %d", &row, &col, &val);
+            sscanf(line.c_str(), "%d %d %lf", &row, &col, &val);
             distances.at(row).at(col) = val;
             distances.at(col).at(row) = val;
         }
@@ -61,10 +62,10 @@ void parse_inputs(int argc, char *argv[]) {
     //     cout << endl;
     // }
 
-    BestTourCost = atoi(argv[2]);
+    BestTourCost = atof(argv[2]);
 }
 
-pair<int, int> compareCost(int cost, pair<int, int> min) {
+pair<double, double> compareCost(double cost, pair<double, double> min) {
     if(cost > 0) {
         if(cost <= min.first) {
             min.second = min.first;
@@ -76,10 +77,10 @@ pair<int, int> compareCost(int cost, pair<int, int> min) {
     return min;
 }
 
-int initialLB() {
-    pair<int, int> min;
-    int cost;
-    int LB=0;
+double initialLB() {
+    pair<double, double> min;
+    double cost;
+    double LB=0;
 
     for(int i=0; i<numCities; i++) {
         min.first = BestTourCost;
@@ -93,12 +94,12 @@ int initialLB() {
     return LB;
 }
 
-int calculateLB(int f, int t, int LB) {
-    int newLB;
-    int cf, ct;
-    pair<int, int> min;
-    int cost;
-    int directCost = distances[f][t];
+double calculateLB(int f, int t, double LB) {
+    double newLB;
+    double cf, ct;
+    pair<double, double> min;
+    double cost;
+    double directCost = distances[f][t];
 
     min.first = BestTourCost;
     min.second = BestTourCost;
@@ -144,25 +145,29 @@ int isInNode(int val, QueueElem node) {
     return 0;
 }
 
-pair<vector <int>, int> tsp() {
+pair<vector <int>, double> tsp() {
     PriorityQueue<QueueElem> myQueue;
 
     vector <int> tour = {0};
-    QueueElem firstElem = initQueueElem(tour, 0, initialLB(), 1, 0);
+    QueueElem firstElem = initQueueElem(tour, 0.0, initialLB(), 1.0, 0.0);
 
     QueueElem myElem;
     vector <int> BestTour = tour;
 
     QueueElem newElem;
-    int newBound, newCost;
+    double newBound, newCost;
     vector <int> newTour;
 
     myQueue.push(firstElem);
 
     while(myQueue.size() > 0){
+        // printQueueElem(myElem);
+        // cout << endl;
+        // cout << "Print queue:" << endl;
+        // myQueue.print(&printQueueElem);
+        // cout << endl;
+        // cout << endl;
         myElem = myQueue.pop();
-        printQueueElem(myElem);
-        cout << endl;
         if(myElem.bound >= BestTourCost) {
             return make_pair(BestTour, BestTourCost);
         }
@@ -192,11 +197,15 @@ pair<vector <int>, int> tsp() {
     return make_pair(BestTour, BestTourCost);
 }
 
-void print_result(vector <int> BestTour, int BestTourCost) {
-    cout << "BestTour: ";
-    for(int i=0; i<numCities; i++) {
-        cout << BestTour.at(i) << " ";
+void print_result(vector <int> BestTour, double BestTourCost) {
+    if(BestTour.size() != numCities+1) {
+        cout << "No solution" << endl;
+    } else {
+        cout << "BestTourCost: " << BestTourCost << endl;
+        cout << "BestTour: ";
+        for(int i=0; i<numCities+1; i++) {
+            cout << BestTour.at(i) << " ";
+        }
+        cout << endl;
     }
-    cout << endl;
-    cout << "BestTourCost: " << BestTourCost << endl;
 }

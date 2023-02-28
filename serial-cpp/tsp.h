@@ -10,15 +10,15 @@ using namespace std;
 #include "element.h"
 
 void parse_inputs(int argc, char *argv[]);
-pair<int, int> compareCost(int cost, int min1, int min2);
-int initialLB();
-int calculateLB(int f, int t, int LB);
+pair<double, double> compareCost(double cost, double min1, double min2);
+double initialLB();
+double calculateLB(int f, int t, double LB);
 // char compare_values(void *a, void *b);
 int isInNode(int val, QueueElem node);
-pair<vector <int>, int> tsp();
-void print_result(vector <int> BestTour, int BestTourCost);
+pair<vector <int>, double> tsp();
+void print_result(vector <int> BestTour, double BestTourCost);
 
 // global variables
-int BestTourCost;
+double BestTourCost;
 int numCities, numRoads;
-vector <vector <int>> distances;
+vector <vector <double>> distances;

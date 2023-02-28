@@ -1,6 +1,6 @@
 #include "element.h"
 
-QueueElem initQueueElem(vector<int> tour, int cost, int bound, int lenght, int currentCity) {
+QueueElem initQueueElem(vector<int> tour, double cost, double bound, int lenght, int currentCity) {
     QueueElem elem =  {tour, cost, bound, lenght, currentCity};
     return elem;
 }
