@@ -203,10 +203,10 @@ pair<vector <int>, double> tsp() {
 
 void print_result(vector <int> BestTour, double BestTourCost) {
     if(BestTour.size() != numCities+1) {
-        cout << "No solution" << endl;
+        cout << "NO SOLUTION" << endl;
     } else {
-        cout << "BestTourCost: " << BestTourCost << endl;
-        cout << "BestTour: ";
+        cout.precision(1);
+        cout << fixed << BestTourCost << endl;
         for(int i=0; i<numCities+1; i++) {
             cout << BestTour.at(i) << " ";
         }
