@@ -17,5 +17,4 @@ struct QueueElem{
   }
 };
 
-QueueElem initQueueElem(vector<int> tour, double cost, double bound, int lenght, int currentCity);
 void printQueueElem(QueueElem myElem);

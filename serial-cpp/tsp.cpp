@@ -55,101 +55,90 @@ void parse_inputs(int argc, char *argv[]) {
     BestTourCost = atof(argv[2]);
 }
 
-pair<double, double> compareCost(double cost, pair<double, double> min) {
-    if(cost <= min.first) {
-        min.second = min.first;
-        min.first = cost;
-    }else if(cost <= min.second) {
-        min.second = cost;
-    }
-    return min;
-}
-
 double initialLB() {
-    pair<double, double> min;
+    double min1, min2;
     double LB=0;
 
     for(int i=0; i<numCities; i++) {
-        min.first = BestTourCost;
-        min.second = BestTourCost;
+        min1 = BestTourCost;
+        min2 = BestTourCost;
         for (int j=0; j<numCities; j++) {
             if(distances.at(i).at(j) > 0) {
-                min = compareCost(distances.at(i).at(j), min);
+                if(distances.at(i).at(j) <= min1) {
+                    min2 = min1;
+                    min1 = distances.at(i).at(j);
+                }else if(distances.at(i).at(j) <= min2) {
+                    min2 = distances.at(i).at(j);
+                }
             }
         }
-        LB += (min.first+min.second)/2;
+        LB += (min1+min2)/2;
     }
     return LB;
 }
 
 double calculateLB(int f, int t, double LB) {
     double cf, ct;
-    pair<double, double> minf, mint;
+    double minf1=BestTourCost, minf2=BestTourCost, mint1=BestTourCost, mint2=BestTourCost;
     double directCost = distances[f][t];
 
     if(distances[f][t] <= 0) {
         cout << "ERROR";
+        exit(-1);
     }
 
-    minf.first = BestTourCost;
-    minf.second = BestTourCost;
-    mint.first = BestTourCost;
-    mint.second = BestTourCost;
     for (int j=0; j<numCities; j++) {
         if(distances.at(f).at(j) > 0) {
-            minf = compareCost(distances.at(f).at(j), minf);
+            if(distances.at(f).at(j) <= minf1) {
+                    minf2 = minf1;
+                    minf1 = distances.at(f).at(j);
+            }else if(distances.at(f).at(j) <= minf2) {
+                    minf2 = distances.at(f).at(j);
+            }
         }
         if(distances.at(t).at(j) > 0) {
-            mint = compareCost(distances.at(t).at(j), mint);
+            if(distances.at(t).at(j) <= mint1) {
+                    mint2 = mint1;
+                    mint1 = distances.at(t).at(j);
+            }else if(distances.at(t).at(j) <= mint2) {
+                    mint2 = distances.at(t).at(j);
+            }
         }
     }
 
-    if(directCost >= minf.second) {
-        cf = minf.second;
+    if(directCost >= minf2) {
+        cf = minf2;
     }else {
-        cf = minf.first;
+        cf = minf1;
     }
 
-    if(directCost >= mint.second) {
-        ct = mint.second;
+    if(directCost >= mint2) {
+        ct = mint2;
     }else {
-        ct = mint.first;
+        ct = mint1;
     }
 
     return LB + directCost - (cf+ct)/2;
 }
 
-int isInNode(int val, QueueElem node) {
-    for(int i=0; i<node.length; i++) {
-        if(node.tour[i] == val) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 pair<vector <int>, double> tsp() {
     PriorityQueue<QueueElem> myQueue;
+    vector <int> BestTour = {0};
 
-    vector <int> tour = {0};
-    QueueElem firstElem = initQueueElem(tour, 0.0, initialLB(), 1.0, 0.0);
-
-    QueueElem myElem;
-    vector <int> BestTour = tour;
-
-    QueueElem newElem;
-    double newBound, newCost;
-    vector <int> newTour;
-
-    myQueue.push(firstElem);
-
+    myQueue.push({{0}, 0.0, initialLB(), 1, 0});
+    
     while(myQueue.size() > 0){
-        // myQueue.print(printQueueElem);
-        // cout << endl;
-        myElem = myQueue.pop();
+        bool visitedCities[numCities] = {false};
+
+        QueueElem myElem = myQueue.pop(); 
+        for (int city : myElem.tour) {
+            visitedCities[city] = true;
+        }
+
         if(myElem.bound >= BestTourCost) {
             return make_pair(BestTour, BestTourCost);
         }
+
         if(myElem.length == numCities) {
             double dist = distances.at(myElem.node).at(0);
             if(dist > 0) {
@@ -159,18 +148,15 @@ pair<vector <int>, double> tsp() {
                     BestTourCost = myElem.cost + dist;
                 }
             }
-        }else {
+        }else {  
             for(int v=0; v<numCities; v++) {
-                if(v != myElem.node && isInNode(v, myElem) == 0) {
-                    double dist = distances.at(myElem.node).at(v);
-                    if(dist > 0) {
-                        newBound = calculateLB(myElem.node, v, myElem.bound);
-                        if(newBound <= BestTourCost) {
-                            newTour = myElem.tour;
-                            newTour.push_back(v);
-                            newElem = initQueueElem(newTour, myElem.cost + dist, newBound, myElem.length+1, v);
-                            myQueue.push(newElem);
-                        }
+                double dist = distances.at(myElem.node).at(v);
+                if(dist>0 && v!=myElem.node && !visitedCities[v]) {
+                    double newBound = calculateLB(myElem.node, v, myElem.bound);                       
+                    if(newBound <= BestTourCost) {
+                        vector <int> newTour = myElem.tour;
+                        newTour.push_back(v);
+                        myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
                     }
                 }
             }

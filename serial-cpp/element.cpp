@@ -1,10 +1,5 @@
 #include "element.h"
 
-QueueElem initQueueElem(vector<int> tour, double cost, double bound, int lenght, int currentCity) {
-    QueueElem elem =  {tour, cost, bound, lenght, currentCity};
-    return elem;
-}
-
 void printQueueElem(QueueElem myElem) {
     cout << "Node: " << myElem.node << endl;
     cout << "Tour: ";

@@ -11,10 +11,8 @@ using namespace std;
 #include "element.h"
 
 void parse_inputs(int argc, char *argv[]);
-pair<double, double> compareCost(double cost, double min1, double min2);
 double initialLB();
 double calculateLB(int f, int t, double LB);
-int isInNode(int val, QueueElem node);
 pair<vector <int>, double> tsp();
 void print_result(vector <int> BestTour, double BestTourCost);
 
