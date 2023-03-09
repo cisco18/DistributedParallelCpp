@@ -137,7 +137,7 @@ pair<vector <int>, double> tsp() {
     while(myQueue.size() > 0){
         bool visitedCities[numCities] = {false};
 
-        QueueElem myElem = myQueue.pop(); 
+        QueueElem myElem = myQueue.pop();
         for (int city : myElem.tour) {
             visitedCities[city] = true;
         }
