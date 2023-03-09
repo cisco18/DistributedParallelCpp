@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
     exec_time += omp_get_wtime();
 
-    cout << "Serial execution time: " << exec_time << endl;
+    // cout << "Serial execution time: " << exec_time << endl;
 
     print_result(results.first, results. second); // to the stdout!
 
