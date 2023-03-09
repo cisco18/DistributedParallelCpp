@@ -26,10 +26,9 @@ void parse_inputs(int argc, char *argv[]) {
     int row, col;
     double val;
 
-    if(argc-1 != 2) {
+    if(argc-1 != 2)
         // cout << "There must be 2 inputs!\n";
         exit(-1);
-    }
 
     if (myfile.is_open()){
         getline(myfile, line);
@@ -37,6 +36,7 @@ void parse_inputs(int argc, char *argv[]) {
     }else
         // cout << "Unable to open file"; 
         exit(-1);
+
     for(int i=0; i<numCities; i++) {
         vector <double> ones(numCities, -1.0);
         distances.push_back(ones);
@@ -50,7 +50,8 @@ void parse_inputs(int argc, char *argv[]) {
         }
         myfile.close();
     }else 
-        cout << "Unable to open file";
+        // cout << "Unable to open file";
+        exit(-1);
 
     BestTourCost = atof(argv[2]);
 }
@@ -90,22 +91,19 @@ double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
     double cf, ct;
     double directCost = distances[f][t];
 
-    if(distances[f][t] <= 0) {
-        cout << "ERROR";
+    if(distances[f][t] <= 0)
+        // cout << "ERROR";
         exit(-1);
-    }
 
     if(directCost >= mins[f].second) {
         cf = mins[f].second;
-    }else {
+    }else
         cf = mins[f].first;
-    }
 
     if(directCost >= mins[t].second) {
         ct = mins[t].second;
-    }else {
+    }else
         ct = mins[t].first;
-    }
 
     return LB + directCost - (cf+ct)/2;
 }
@@ -143,9 +141,8 @@ pair<vector <int>, double> tsp() {
     while(myQueue.size() > 0){
         QueueElem myElem = myQueue.pop();
 
-        if(myElem.bound >= BestTourCost) {
+        if(myElem.bound >= BestTourCost)
             return make_pair(BestTour, BestTourCost);
-        }
 
         if(myElem.length == numCities) {
             double dist = distances[myElem.node][0];
@@ -156,9 +153,8 @@ pair<vector <int>, double> tsp() {
                     BestTourCost = myElem.cost + dist;
                 }
             }
-        }else {  
+        }else 
             create_children(myElem, myQueue, mins);
-        }
     }
     return make_pair(BestTour, BestTourCost);
 }
