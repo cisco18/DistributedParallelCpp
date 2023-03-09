@@ -110,26 +110,38 @@ double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
     return LB + directCost - (cf+ct)/2;
 }
 
+void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vector<pair<double,double>> &mins) {
+    bool visitedCities[numCities] = {false};
+
+    for (int city : myElem.tour) {
+        visitedCities[city] = true;
+    }
+
+    for(int v=0; v<numCities; v++) {
+        double dist = distances[myElem.node][v];
+        if(dist>0 && !visitedCities[v]) {
+            double newBound = calculateLB(mins, myElem.node, v, myElem.bound);                       
+            if(newBound <= BestTourCost) {
+                vector <int> newTour = myElem.tour;
+                newTour.push_back(v);
+                myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+            }
+        }
+    }
+}
+
 pair<vector <int>, double> tsp() {
     PriorityQueue<QueueElem> myQueue;
 
     vector <int> BestTour = {0};
     BestTour.reserve(numCities+1);
 
-    // vector <int> newTour;
-    // newTour.reserve(numCities+1);
-
     vector<pair<double,double>> mins = get_mins();
 
     myQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
     
     while(myQueue.size() > 0){
-        bool visitedCities[numCities] = {false};
-
         QueueElem myElem = myQueue.pop();
-        for (int city : myElem.tour) {
-            visitedCities[city] = true;
-        }
 
         if(myElem.bound >= BestTourCost) {
             return make_pair(BestTour, BestTourCost);
@@ -145,17 +157,7 @@ pair<vector <int>, double> tsp() {
                 }
             }
         }else {  
-            for(int v=0; v<numCities; v++) {
-                double dist = distances[myElem.node][v];
-                if(dist>0 && !visitedCities[v]) {
-                    double newBound = calculateLB(mins, myElem.node, v, myElem.bound);                       
-                    if(newBound <= BestTourCost) {
-                        vector <int> newTour = myElem.tour;
-                        newTour.push_back(v);
-                        myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
-                    }
-                }
-            }
+            create_children(myElem, myQueue, mins);
         }
     }
     return make_pair(BestTour, BestTourCost);
