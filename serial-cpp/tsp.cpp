@@ -125,7 +125,12 @@ double calculateLB(int f, int t, double LB) {
 
 pair<vector <int>, double> tsp() {
     PriorityQueue<QueueElem> myQueue;
+
     vector <int> BestTour = {0};
+    BestTour.reserve(numCities+1);
+
+    vector <int> newTour;
+    newTour.reserve(numCities+1);
 
     myQueue.push({{0}, 0.0, initialLB(), 1, 0});
     
@@ -156,7 +161,7 @@ pair<vector <int>, double> tsp() {
                 if(dist>0 && v!=myElem.node && !visitedCities[v]) {
                     double newBound = calculateLB(myElem.node, v, myElem.bound);                       
                     if(newBound <= BestTourCost) {
-                        vector <int> newTour = myElem.tour;
+                        newTour = myElem.tour;
                         newTour.push_back(v);
                         myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
                     }
