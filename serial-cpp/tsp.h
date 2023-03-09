@@ -11,8 +11,9 @@ using namespace std;
 #include "element.h"
 
 void parse_inputs(int argc, char *argv[]);
-double initialLB();
-double calculateLB(int f, int t, double LB);
+vector<pair<double,double>> get_mins();
+double initialLB(vector<pair<double,double>> &mins);
+double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB);
 pair<vector <int>, double> tsp();
 void print_result(vector <int> BestTour, double BestTourCost);
 

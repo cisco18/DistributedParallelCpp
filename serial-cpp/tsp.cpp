@@ -55,31 +55,39 @@ void parse_inputs(int argc, char *argv[]) {
     BestTourCost = atof(argv[2]);
 }
 
-double initialLB() {
-    double min1, min2;
-    double LB=0;
+vector<pair<double,double>> get_mins() {
+    vector<pair<double,double>> mins;
+    mins.reserve(numCities);
 
-    for(int i=0; i<numCities; i++) {
-        min1 = BestTourCost;
-        min2 = BestTourCost;
+    for (int i=0; i<numCities; i++) {
+        double min1 = BestTourCost, min2 = BestTourCost;
         for (int j=0; j<numCities; j++) {
-            if(distances[i][j] > 0) {
-                if(distances[i][j] <= min1) {
+            double dist1 = distances[i][j];
+            if(dist1 > 0) {
+                if(dist1 <= min1) {
                     min2 = min1;
-                    min1 = distances[i][j];
-                }else if(distances[i][j] <= min2) {
-                    min2 = distances[i][j];
+                    min1 = dist1;
+                }else if(dist1 <= min2) {
+                    min2 = dist1;
                 }
             }
         }
-        LB += (min1+min2)/2;
+        mins.push_back(make_pair(min1, min2));
+    }
+    return mins;
+}
+
+double initialLB(vector<pair<double,double>> &mins) {
+    double LB=0;
+
+    for(int i=0; i<numCities; i++) {
+        LB += (mins[i].first + mins[i].second)/2;
     }
     return LB;
 }
 
-double calculateLB(int f, int t, double LB) {
+double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
     double cf, ct;
-    double minf1=BestTourCost, minf2=BestTourCost, mint1=BestTourCost, mint2=BestTourCost;
     double directCost = distances[f][t];
 
     if(distances[f][t] <= 0) {
@@ -87,37 +95,16 @@ double calculateLB(int f, int t, double LB) {
         exit(-1);
     }
 
-    for (int j=0; j<numCities; j++) {
-        double dist1 = distances[f][j];
-        double dist2 = distances[t][j];
-        if(dist1 > 0) {
-            if(dist1 <= minf1) {
-                minf2 = minf1;
-                minf1 = dist1;
-            }else if(dist1 <= minf2) {
-                minf2 = dist1;
-            }
-        }
-        if(dist2 > 0) {
-            if(dist2 <= mint1) {
-                mint2 = mint1;
-                mint1 = dist2;
-            }else if(dist2 <= mint2) {
-                mint2 = dist2;
-            }
-        }
+    if(directCost >= mins[f].second) {
+        cf = mins[f].second;
+    }else {
+        cf = mins[f].first;
     }
 
-    if(directCost >= minf2) {
-        cf = minf2;
+    if(directCost >= mins[t].second) {
+        ct = mins[t].second;
     }else {
-        cf = minf1;
-    }
-
-    if(directCost >= mint2) {
-        ct = mint2;
-    }else {
-        ct = mint1;
+        ct = mins[t].first;
     }
 
     return LB + directCost - (cf+ct)/2;
@@ -129,10 +116,12 @@ pair<vector <int>, double> tsp() {
     vector <int> BestTour = {0};
     BestTour.reserve(numCities+1);
 
-    vector <int> newTour;
-    newTour.reserve(numCities+1);
+    // vector <int> newTour;
+    // newTour.reserve(numCities+1);
 
-    myQueue.push({{0}, 0.0, initialLB(), 1, 0});
+    vector<pair<double,double>> mins = get_mins();
+
+    myQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
     
     while(myQueue.size() > 0){
         bool visitedCities[numCities] = {false};
@@ -158,10 +147,10 @@ pair<vector <int>, double> tsp() {
         }else {  
             for(int v=0; v<numCities; v++) {
                 double dist = distances[myElem.node][v];
-                if(dist>0 && v!=myElem.node && !visitedCities[v]) {
-                    double newBound = calculateLB(myElem.node, v, myElem.bound);                       
+                if(dist>0 && !visitedCities[v]) {
+                    double newBound = calculateLB(mins, myElem.node, v, myElem.bound);                       
                     if(newBound <= BestTourCost) {
-                        newTour = myElem.tour;
+                        vector <int> newTour = myElem.tour;
                         newTour.push_back(v);
                         myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
                     }

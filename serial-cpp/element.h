@@ -12,7 +12,9 @@ struct QueueElem{
   double bound;
   int length;
   int node;
-  friend bool operator>(QueueElem left, QueueElem right) {
+  friend bool operator>(const QueueElem &left, const QueueElem &right) {
+    if(left.bound == right.bound)
+      return left.node > right.node;
     return left.bound > right.bound;
   }
 };
