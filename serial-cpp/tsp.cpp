@@ -45,8 +45,8 @@ void parse_inputs(int argc, char *argv[]) {
     if (myfile.is_open()){
         while (getline(myfile, line)) {
             sscanf(line.c_str(), "%d %d %lf", &row, &col, &val);
-            distances.at(row).at(col) = val;
-            distances.at(col).at(row) = val;
+            distances[row][col] = val;
+            distances[col][row] = val;
         }
         myfile.close();
     }else 
@@ -63,12 +63,12 @@ double initialLB() {
         min1 = BestTourCost;
         min2 = BestTourCost;
         for (int j=0; j<numCities; j++) {
-            if(distances.at(i).at(j) > 0) {
-                if(distances.at(i).at(j) <= min1) {
+            if(distances[i][j] > 0) {
+                if(distances[i][j] <= min1) {
                     min2 = min1;
-                    min1 = distances.at(i).at(j);
-                }else if(distances.at(i).at(j) <= min2) {
-                    min2 = distances.at(i).at(j);
+                    min1 = distances[i][j];
+                }else if(distances[i][j] <= min2) {
+                    min2 = distances[i][j];
                 }
             }
         }
@@ -88,20 +88,20 @@ double calculateLB(int f, int t, double LB) {
     }
 
     for (int j=0; j<numCities; j++) {
-        if(distances.at(f).at(j) > 0) {
-            if(distances.at(f).at(j) <= minf1) {
+        if(distances[f][j] > 0) {
+            if(distances[f][j] <= minf1) {
                     minf2 = minf1;
-                    minf1 = distances.at(f).at(j);
-            }else if(distances.at(f).at(j) <= minf2) {
-                    minf2 = distances.at(f).at(j);
+                    minf1 = distances[f][j];
+            }else if(distances[f][j] <= minf2) {
+                    minf2 = distances[f][j];
             }
         }
-        if(distances.at(t).at(j) > 0) {
-            if(distances.at(t).at(j) <= mint1) {
+        if(distances[t][j] > 0) {
+            if(distances[t][j] <= mint1) {
                     mint2 = mint1;
-                    mint1 = distances.at(t).at(j);
-            }else if(distances.at(t).at(j) <= mint2) {
-                    mint2 = distances.at(t).at(j);
+                    mint1 = distances[t][j];
+            }else if(distances[t][j] <= mint2) {
+                    mint2 = distances[t][j];
             }
         }
     }
@@ -140,7 +140,7 @@ pair<vector <int>, double> tsp() {
         }
 
         if(myElem.length == numCities) {
-            double dist = distances.at(myElem.node).at(0);
+            double dist = distances[myElem.node][0];
             if(dist > 0) {
                 if(myElem.cost + dist <= BestTourCost) {
                     BestTour = myElem.tour;
@@ -150,7 +150,7 @@ pair<vector <int>, double> tsp() {
             }
         }else {  
             for(int v=0; v<numCities; v++) {
-                double dist = distances.at(myElem.node).at(v);
+                double dist = distances[myElem.node][v];
                 if(dist>0 && v!=myElem.node && !visitedCities[v]) {
                     double newBound = calculateLB(myElem.node, v, myElem.bound);                       
                     if(newBound <= BestTourCost) {
@@ -172,7 +172,7 @@ void print_result(vector <int> BestTour, double BestTourCost) {
         cout.precision(1);
         cout << fixed << BestTourCost << endl;
         for(int i=0; i<numCities+1; i++) {
-            cout << BestTour.at(i) << " ";
+            cout << BestTour[i] << " ";
         }
         cout << endl;
     }
