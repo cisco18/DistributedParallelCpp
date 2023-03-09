@@ -88,20 +88,22 @@ double calculateLB(int f, int t, double LB) {
     }
 
     for (int j=0; j<numCities; j++) {
-        if(distances[f][j] > 0) {
-            if(distances[f][j] <= minf1) {
-                    minf2 = minf1;
-                    minf1 = distances[f][j];
-            }else if(distances[f][j] <= minf2) {
-                    minf2 = distances[f][j];
+        double dist1 = distances[f][j];
+        double dist2 = distances[t][j];
+        if(dist1 > 0) {
+            if(dist1 <= minf1) {
+                minf2 = minf1;
+                minf1 = dist1;
+            }else if(dist1 <= minf2) {
+                minf2 = dist1;
             }
         }
-        if(distances[t][j] > 0) {
-            if(distances[t][j] <= mint1) {
-                    mint2 = mint1;
-                    mint1 = distances[t][j];
-            }else if(distances[t][j] <= mint2) {
-                    mint2 = distances[t][j];
+        if(dist2 > 0) {
+            if(dist2 <= mint1) {
+                mint2 = mint1;
+                mint1 = dist2;
+            }else if(dist2 <= mint2) {
+                mint2 = dist2;
             }
         }
     }
