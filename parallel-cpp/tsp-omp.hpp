@@ -8,7 +8,7 @@
 using namespace std;
 
 #include "queue.hpp"
-#include "element.h"
+#include "element.hpp"
 
 void parse_inputs(int argc, char *argv[]);
 vector<pair<double,double>> get_mins();

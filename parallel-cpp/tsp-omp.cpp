@@ -1,5 +1,6 @@
-#include "tsp-omp.h"
+#include "tsp-omp.hpp"
 #include <omp.h>
+#include <limits>
 
 int main(int argc, char *argv[]) {
     double exec_time;
@@ -8,11 +9,11 @@ int main(int argc, char *argv[]) {
 
     exec_time = -omp_get_wtime();
 
-    pair<vector <int>, double> results = tsp();
+    pair<vector <int>, double> results = tsp_parallel();
 
     exec_time += omp_get_wtime();
 
-    cout << "Serial execution time: " << exec_time << endl;
+    cout << "Parallel execution time: " << exec_time << endl;
 
     print_result(results.first, results. second); // to the stdout!
 
@@ -142,8 +143,8 @@ void print_result(vector <int> BestTour, double BestTourCost) {
 }
 
 pair<vector<int>, double> tsp_parallel() {
-    vector<int> BestTour;
-    double BestTourCost = numeric_limits<double>::infinity();
+    vector <int> BestTour = {0};
+    BestTour.reserve(numCities+1);
 
     vector<pair<double,double>> mins = get_mins();
 
@@ -178,7 +179,7 @@ pair<vector<int>, double> tsp_parallel() {
                 }
             }else {
                 vector<QueueElem> children;
-                create_children(myElem, children, mins);
+                create_children(myElem, myQueue, mins);
                 for(auto& child : children) {
                     myQueue.push(child);
                 }
