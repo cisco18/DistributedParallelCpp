@@ -8,7 +8,6 @@ int main(int argc, char *argv[]) {
     parse_inputs(argc, argv);
 
     exec_time = -omp_get_wtime();
-
     pair<vector <int>, double> results = tsp_parallel();
 
     exec_time += omp_get_wtime();
@@ -150,18 +149,23 @@ pair<vector<int>, double> tsp_parallel() {
 
     vector<PriorityQueue<QueueElem>> subqueues(omp_get_max_threads());
     subqueues[0].push({{0}, 0.0, initialLB(mins), 1, 0});
-
+    omp_set_num_threads(8);
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
         PriorityQueue<QueueElem>& myQueue = subqueues[tid];
+        cout << "Thread: " << tid << endl;
         while(!myQueue.empty()){
-            QueueElem myElem = myQueue.pop();
-
+            QueueElem myElem;
             #pragma omp critical
+            myElem = myQueue.pop();
+            
+
             {
-                if(myElem.bound >= BestTourCost)
-                    break;
+                if(myElem.bound >= BestTourCost){
+                    #pragma omp cancel parallel
+                        break;
+                }
             }
 
             if(myElem.length == numCities) {

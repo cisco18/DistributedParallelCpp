@@ -8,10 +8,10 @@
 all: tsp-omp tsp-omp.o element.o
 
 tsp-omp.o: tsp-omp.cpp tsp-omp.hpp
-	g++ -c -O3 tsp-omp.cpp
+	g++ -c -O3 -fopenmp tsp-omp.cpp
 
 element.o: element.cpp element.hpp
-	g++ -c -O3 element.cpp
+	g++ -c -O3 -fopenmp element.cpp 
 
 tsp-omp: tsp-omp.o element.o
 	g++ -g -Wall -O3 -o tsp-omp -fopenmp tsp-omp.o element.o
