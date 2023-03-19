@@ -7,11 +7,11 @@
 # The build target
 all: tsp tsp.o element.o
 
-tsp.o: tsp.c tsp.h
-	g++ -c -O3 tsp.c
+tsp.o: tsp.cpp tsp.h
+	g++ -c -O3 tsp.cpp
 
-element.o: element.c element.h
-	g++ -c -O3 element.c
+element.o: element.cpp element.h
+	g++ -c -O3 element.cpp
 
 tsp: tsp.o element.o
 	g++ -g -Wall -O3 -o tsp -fopenmp tsp.o element.o

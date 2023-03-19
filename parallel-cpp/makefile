@@ -7,10 +7,10 @@
 # The build target
 all: tsp-omp tsp-omp.o element.o
 
-tsp-omp.o: tsp-omp.cpp tsp-omp.hpp
+tsp-omp.o: tsp-omp.cpp tsp-omp.h
 	g++ -c -O3 -fopenmp tsp-omp.cpp
 
-element.o: element.cpp element.hpp
+element.o: element.cpp element.h
 	g++ -c -O3 -fopenmp element.cpp 
 
 tsp-omp: tsp-omp.o element.o

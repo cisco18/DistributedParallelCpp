@@ -1,18 +1,19 @@
-#include "tsp-omp.hpp"
-#include <omp.h>
-#include <limits>
+#include "tsp-omp.h"
 
 int main(int argc, char *argv[]) {
+    omp_set_num_threads(4);
+
     double exec_time;
 
     parse_inputs(argc, argv);
 
     exec_time = -omp_get_wtime();
-    pair<vector <int>, double> results = tsp_parallel();
+
+    pair<vector <int>, double> results = tsp();
 
     exec_time += omp_get_wtime();
 
-    cout << "Parallel execution time: " << exec_time << endl;
+    cout << "Serial execution time: " << exec_time << endl;
 
     print_result(results.first, results. second); // to the stdout!
 
@@ -27,14 +28,12 @@ void parse_inputs(int argc, char *argv[]) {
     double val;
 
     if(argc-1 != 2)
-        // cout << "There must be 2 inputs!\n";
         exit(-1);
 
     if (myfile.is_open()){
         getline(myfile, line);
         sscanf(line.c_str(), "%d %d", &numCities, &numRoads);
     }else
-        // cout << "Unable to open file"; 
         exit(-1);
 
     for(int i=0; i<numCities; i++) {
@@ -50,7 +49,6 @@ void parse_inputs(int argc, char *argv[]) {
         }
         myfile.close();
     }else 
-        // cout << "Unable to open file";
         exit(-1);
 
     BestTourCost = atof(argv[2]);
@@ -61,20 +59,22 @@ vector<pair<double,double>> get_mins() {
     mins.reserve(numCities);
 
     for (int i=0; i<numCities; i++) {
-        double min1 = BestTourCost, min2 = BestTourCost;
+        double min1 = BestTourCost;
+        double min2 = BestTourCost;
         for (int j=0; j<numCities; j++) {
-            double dist1 = distances[i][j];
-            if(dist1 > 0) {
-                if(dist1 <= min1) {
+            double dist = distances[i][j];
+            if(dist > 0) {
+                if(dist <= min1) {
                     min2 = min1;
-                    min1 = dist1;
-                }else if(dist1 <= min2) {
-                    min2 = dist1;
+                    min1 = dist;
+                }else if(dist <= min2) {
+                    min2 = dist;
                 }
             }
         }
-        mins.push_back(make_pair(min1, min2));
+        mins[i] = make_pair(min1, min2);
     }
+
     return mins;
 }
 
@@ -92,7 +92,6 @@ double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
     double directCost = distances[f][t];
 
     if(distances[f][t] <= 0)
-        // cout << "ERROR";
         exit(-1);
 
     if(directCost >= mins[f].second) {
@@ -122,10 +121,69 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
             if(newBound <= BestTourCost) {
                 vector <int> newTour = myElem.tour;
                 newTour.push_back(v);
-                myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                #pragma omp critical(queue)
+                    myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
         }
     }
+}
+
+pair<vector <int>, double> tsp() {
+    PriorityQueue<QueueElem> myQueue;
+
+    vector <int> BestTour = {0};
+    BestTour.reserve(numCities+1);
+
+    omp_lock_t lck_size;
+    omp_init_lock(&lck_size);
+
+    vector<pair<double,double>> mins = get_mins();
+
+    myQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
+    
+    #pragma omp parallel
+    {
+        do{
+            if(myQueue.size() < omp_get_thread_num()) {
+                omp_set_lock(&lck_size);
+                // cout << "Locked" <<endl;
+            }else {
+                omp_unset_lock(&lck_size);
+                // cout << "Unlocked" <<endl;
+            }
+
+            QueueElem myElem;
+            #pragma omp critical(queue)
+            {
+                myElem = myQueue.pop();
+                // cout << endl;
+                // cout << "Thread: " << omp_get_thread_num() << endl;
+                // printQueueElem(myElem);
+            }
+            
+
+            if(myElem.bound >= BestTourCost) {
+                #pragma omp cancel parallel
+                    break;
+            }
+
+            if(myElem.length == numCities) {
+                double dist = distances[myElem.node][0];
+                if(dist > 0) {
+                    if(myElem.cost + dist <= BestTourCost) {
+                        BestTour = myElem.tour;
+                        BestTour.push_back(0);
+                        BestTourCost = myElem.cost + dist;
+                    }
+                }
+            }else
+                create_children(myElem, myQueue, mins);
+        }while(myQueue.size() > 0);
+    }
+
+    omp_destroy_lock(&lck_size);
+
+    return make_pair(BestTour, BestTourCost);
 }
 
 void print_result(vector <int> BestTour, double BestTourCost) {
@@ -139,57 +197,4 @@ void print_result(vector <int> BestTour, double BestTourCost) {
         }
         cout << endl;
     }
-}
-
-pair<vector<int>, double> tsp_parallel() {
-    vector <int> BestTour = {0};
-    BestTour.reserve(numCities+1);
-
-    vector<pair<double,double>> mins = get_mins();
-
-    vector<PriorityQueue<QueueElem>> subqueues(omp_get_max_threads());
-    subqueues[0].push({{0}, 0.0, initialLB(mins), 1, 0});
-    omp_set_num_threads(8);
-    #pragma omp parallel
-    {
-        int tid = omp_get_thread_num();
-        PriorityQueue<QueueElem>& myQueue = subqueues[tid];
-        cout << "Thread: " << tid << endl;
-        while(!myQueue.empty()){
-            QueueElem myElem;
-            #pragma omp critical
-            myElem = myQueue.pop();
-            
-
-            {
-                if(myElem.bound >= BestTourCost){
-                    #pragma omp cancel parallel
-                        break;
-                }
-            }
-
-            if(myElem.length == numCities) {
-                double dist = distances[myElem.node][0];
-                if(dist > 0) {
-                    double tourCost = myElem.cost + dist;
-                    #pragma omp critical
-                    {
-                        if(tourCost <= BestTourCost) {
-                            BestTour = myElem.tour;
-                            BestTour.push_back(0);
-                            BestTourCost = tourCost;
-                        }
-                    }
-                }
-            }else {
-                vector<QueueElem> children;
-                create_children(myElem, myQueue, mins);
-                for(auto& child : children) {
-                    myQueue.push(child);
-                }
-            }
-        }
-    }
-
-    return make_pair(BestTour, BestTourCost);
 }

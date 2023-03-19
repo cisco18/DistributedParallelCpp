@@ -1,4 +1,4 @@
-#include "element.hpp"
+#include "element.h"
 
 void printQueueElem(QueueElem myElem) {
     cout << "Node: " << myElem.node << endl;
