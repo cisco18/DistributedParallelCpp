@@ -1,7 +1,7 @@
 #include "tsp-omp.h"
 
 int main(int argc, char *argv[]) {
-    omp_set_num_threads(2);
+    omp_set_num_threads(8);
 
     double exec_time;
 
@@ -129,6 +129,8 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
 }
 
 pair<vector <int>, double> tsp() {
+    int finished = 0;
+
     PriorityQueue<QueueElem> myQueue;
 
     vector <int> BestTour = {0};
@@ -140,7 +142,7 @@ pair<vector <int>, double> tsp() {
     
     #pragma omp parallel
     {
-        do{
+        while(finished == 0){
             QueueElem myElem;
             #pragma omp critical(queue)
                 myElem = myQueue.pop();
@@ -149,15 +151,17 @@ pair<vector <int>, double> tsp() {
                 continue;
             }
             
-            #pragma omp critical(print)
-            {
-                cout << "Thread " << omp_get_thread_num() << " popped!" << endl;
-                printQueueElem(myElem);
-            }
+            // #pragma omp critical(print)
+            // {
+            //     cout << "Thread " << omp_get_thread_num() << " popped!" << endl;
+            //     printQueueElem(myElem);
+            // }
 
             if(myElem.bound >= BestTourCost) {
-                #pragma omp critical(print)
-                    cout << "Thread " << omp_get_thread_num() << " found best solution!" << endl;
+                // #pragma omp critical(print)
+                //     cout << "Thread " << omp_get_thread_num() << " found best solution!" << endl;
+                #pragma omp critical(finish_tag)
+                    finished = 1;
                 #pragma omp cancel parallel
                 break;
             }
@@ -173,7 +177,7 @@ pair<vector <int>, double> tsp() {
                 }
             }else
                 create_children(myElem, myQueue, mins);
-        }while(omp_get_active_level() > 0);
+        }
     }
 
     return make_pair(BestTour, BestTourCost);
