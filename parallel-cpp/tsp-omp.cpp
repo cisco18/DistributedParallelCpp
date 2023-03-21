@@ -129,42 +129,37 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
 }
 
 pair<vector <int>, double> tsp() {
-    PriorityQueue<QueueElem> mainQueue;
+    PriorityQueue<QueueElem> myQueue;
 
     vector <int> BestTour = {0};
     BestTour.reserve(numCities+1);
 
     vector<pair<double,double>> mins = get_mins();
 
-    mainQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
+    myQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
     
     #pragma omp parallel
     {
-        while(mainQueue.size() > 0) {
-            cout << endl;
-
+        do{
             QueueElem myElem;
             #pragma omp critical(queue)
                 myElem = myQueue.pop();
 
             if (myElem.tour.size() == 0) {
-                #pragma omp critical(print)
-                {
-                    cout << "Thread: " << omp_get_thread_num() << endl;
-                    cout << "Skipping iteration!" << endl;
-                }
                 continue;
             }
             
             #pragma omp critical(print)
             {
-                cout << "Thread: " << omp_get_thread_num() << endl;
+                cout << "Thread " << omp_get_thread_num() << " popped!" << endl;
                 printQueueElem(myElem);
             }
 
             if(myElem.bound >= BestTourCost) {
+                #pragma omp critical(print)
+                    cout << "Thread " << omp_get_thread_num() << " found best solution!" << endl;
                 #pragma omp cancel parallel
-                    break;
+                break;
             }
 
             if(myElem.length == numCities) {
@@ -178,7 +173,7 @@ pair<vector <int>, double> tsp() {
                 }
             }else
                 create_children(myElem, myQueue, mins);
-        }
+        }while(omp_get_active_level() > 0);
     }
 
     return make_pair(BestTour, BestTourCost);
