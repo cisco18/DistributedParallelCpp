@@ -1,8 +1,6 @@
 #include "tsp-omp.h"
 
 int main(int argc, char *argv[]) {
-    omp_set_num_threads(8);
-
     double exec_time;
 
     parse_inputs(argc, argv);
@@ -107,7 +105,7 @@ double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
     return LB + directCost - (cf+ct)/2;
 }
 
-void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vector<pair<double,double>> &mins) {
+void create_children(PriorityQueue<QueueElem> &mainQueue, QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vector<pair<double,double>> &mins) {
     bool visitedCities[numCities] = {false};
 
     for (int city : myElem.tour) {
@@ -121,7 +119,9 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
             if(newBound <= BestTourCost) {
                 vector <int> newTour = myElem.tour;
                 newTour.push_back(v);
-                #pragma omp critical(queue)
+                if(mainQueue.size() <= omp_get_num_threads()) {
+                    mainQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                }else
                     myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
         }
@@ -129,39 +129,56 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
 }
 
 pair<vector <int>, double> tsp() {
-    int finished = 0;
-
-    PriorityQueue<QueueElem> myQueue;
+    PriorityQueue<QueueElem> mainQueue;
 
     vector <int> BestTour = {0};
     BestTour.reserve(numCities+1);
 
     vector<pair<double,double>> mins = get_mins();
 
-    myQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
+    mainQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
     
+    while(mainQueue.size() < omp_get_max_threads()) {
+        QueueElem myElem = mainQueue.pop();
+
+        if(myElem.bound >= BestTourCost)
+            return make_pair(BestTour, BestTourCost);
+
+        if(myElem.length == numCities) {
+            double dist = distances[myElem.node][0];
+            if(dist > 0) {
+                if(myElem.cost + dist <= BestTourCost) {
+                    BestTour = myElem.tour;
+                    BestTour.push_back(0);
+                    BestTourCost = myElem.cost + dist;
+                }
+            }
+        }else 
+            create_children(mainQueue, myElem, mainQueue, mins);
+    }
+
+    // mainQueue.print(printQueueElem);
+
     #pragma omp parallel
     {
-        while(finished == 0){
-            QueueElem myElem;
-            #pragma omp critical(queue)
-                myElem = myQueue.pop();
+        PriorityQueue<QueueElem> myQueue;
+        QueueElem myElem;
 
-            if (myElem.tour.size() == 0) {
-                continue;
-            }
-            
-            // #pragma omp critical(print)
-            // {
-            //     cout << "Thread " << omp_get_thread_num() << " popped!" << endl;
-            //     printQueueElem(myElem);
-            // }
+        #pragma omp critical(mainQueue_access)
+            myElem = mainQueue.pop();
+
+        // #pragma omp critical(print)
+        // {
+        //     cout << "Thread " << omp_get_thread_num() << " popped!" << endl;
+        //     printQueueElem(myElem);
+        // }
+        
+        myQueue.push(myElem);
+
+        while(mainQueue.size() > 0 || myQueue.size() > 0) {
+            myElem = myQueue.pop();
 
             if(myElem.bound >= BestTourCost) {
-                // #pragma omp critical(print)
-                //     cout << "Thread " << omp_get_thread_num() << " found best solution!" << endl;
-                #pragma omp critical(finish_tag)
-                    finished = 1;
                 #pragma omp cancel parallel
                 break;
             }
@@ -169,16 +186,27 @@ pair<vector <int>, double> tsp() {
             if(myElem.length == numCities) {
                 double dist = distances[myElem.node][0];
                 if(dist > 0) {
-                    if(myElem.cost + dist <= BestTourCost) {
-                        BestTour = myElem.tour;
-                        BestTour.push_back(0);
-                        BestTourCost = myElem.cost + dist;
+                    #pragma omp critical(bests)
+                    {
+                        if(myElem.cost + dist <= BestTourCost) {
+                            BestTour = myElem.tour;
+                            BestTour.push_back(0);
+                            BestTourCost = myElem.cost + dist;
+                        }
                     }
                 }
             }else
-                create_children(myElem, myQueue, mins);
+                #pragma omp critical(mainQueue_access)
+                    create_children(mainQueue, myElem, myQueue, mins);
+
+            if (myQueue.size() == 0) {
+                #pragma omp critical(mainQueue_access)
+                    myElem = mainQueue.pop();
+                myQueue.push(myElem);
+            }
         }
     }
+    
 
     return make_pair(BestTour, BestTourCost);
 }
