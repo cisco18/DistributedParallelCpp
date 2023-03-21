@@ -129,70 +129,38 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
 }
 
 pair<vector <int>, double> tsp() {
-    PriorityQueue<QueueElem> myQueue;
+    PriorityQueue<QueueElem> mainQueue;
 
     vector <int> BestTour = {0};
     BestTour.reserve(numCities+1);
 
-    omp_lock_t lck_size;
-    omp_init_lock(&lck_size);
-
     vector<pair<double,double>> mins = get_mins();
 
-    myQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
+    mainQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
     
     #pragma omp parallel
     {
-        do{
-            if(omp_test_lock(&lck_size)) {
-                omp_unset_lock(&lck_size);
-                #pragma omp critical(print)
-                {
-                    cout << "Thread: " << omp_get_thread_num() << endl;
-                    cout << "Unlocked" <<endl;
-                }
-            }
-            
-            // #pragma omp critical(print)
-            // {
-            // cout << "size: " << myQueue.size() << endl;
-            // cout << "threads: " << omp_get_num_threads() << endl << endl;
-            // }
-
-            // if(myQueue.size() < omp_get_num_threads()) {
-            //     omp_set_lock(&lck_size);
-            //     // #pragma omp critical(print)
-            //     //     cout << "Locked" <<endl;
-            // }else {
-            //     omp_unset_lock(&lck_size);
-            //     // #pragma omp critical(print)
-            //     //     cout << "Unlocked" <<endl;
-            // }
-            
+        while(mainQueue.size() > 0) {
+            cout << endl;
 
             QueueElem myElem;
             #pragma omp critical(queue)
                 myElem = myQueue.pop();
 
-            if (myQueue.size() <= omp_get_num_threads()) {
-                if(!omp_test_lock(&lck_size)) {
-                    #pragma omp critical(print)
-                    {
-                        cout << "Thread: " << omp_get_thread_num() << endl;
-                        cout << "Locked" <<endl;
-                    }
-                    omp_set_lock(&lck_size);
+            if (myElem.tour.size() == 0) {
+                #pragma omp critical(print)
+                {
+                    cout << "Thread: " << omp_get_thread_num() << endl;
+                    cout << "Skipping iteration!" << endl;
                 }
                 continue;
             }
             
             #pragma omp critical(print)
             {
-                cout << endl;
                 cout << "Thread: " << omp_get_thread_num() << endl;
                 printQueueElem(myElem);
             }
-            
 
             if(myElem.bound >= BestTourCost) {
                 #pragma omp cancel parallel
@@ -210,11 +178,8 @@ pair<vector <int>, double> tsp() {
                 }
             }else
                 create_children(myElem, myQueue, mins);
-
-        }while(myQueue.size() > 0);
+        }
     }
-
-    omp_destroy_lock(&lck_size);
 
     return make_pair(BestTour, BestTourCost);
 }
