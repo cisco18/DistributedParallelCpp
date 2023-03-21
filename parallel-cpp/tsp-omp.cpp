@@ -1,7 +1,7 @@
 #include "tsp-omp.h"
 
 int main(int argc, char *argv[]) {
-    omp_set_num_threads(4);
+    omp_set_num_threads(2);
 
     double exec_time;
 
@@ -144,21 +144,53 @@ pair<vector <int>, double> tsp() {
     #pragma omp parallel
     {
         do{
-            if(myQueue.size() < omp_get_thread_num()) {
-                omp_set_lock(&lck_size);
-                // cout << "Locked" <<endl;
-            }else {
+            if(omp_test_lock(&lck_size)) {
                 omp_unset_lock(&lck_size);
-                // cout << "Unlocked" <<endl;
+                #pragma omp critical(print)
+                {
+                    cout << "Thread: " << omp_get_thread_num() << endl;
+                    cout << "Unlocked" <<endl;
+                }
             }
+            
+            // #pragma omp critical(print)
+            // {
+            // cout << "size: " << myQueue.size() << endl;
+            // cout << "threads: " << omp_get_num_threads() << endl << endl;
+            // }
+
+            // if(myQueue.size() < omp_get_num_threads()) {
+            //     omp_set_lock(&lck_size);
+            //     // #pragma omp critical(print)
+            //     //     cout << "Locked" <<endl;
+            // }else {
+            //     omp_unset_lock(&lck_size);
+            //     // #pragma omp critical(print)
+            //     //     cout << "Unlocked" <<endl;
+            // }
+            
 
             QueueElem myElem;
             #pragma omp critical(queue)
-            {
                 myElem = myQueue.pop();
-                // cout << endl;
-                // cout << "Thread: " << omp_get_thread_num() << endl;
-                // printQueueElem(myElem);
+
+            if (myQueue.size() <= omp_get_num_threads()) {
+                if(!omp_test_lock(&lck_size)) {
+                    #pragma omp critical(print)
+                    {
+                        cout << "Thread: " << omp_get_thread_num() << endl;
+                        cout << "Locked" <<endl;
+                    }
+                    omp_set_lock(&lck_size);
+                }
+                continue;
+            }
+            
+            #pragma omp critical(print)
+            {
+                cout << endl;
+                cout << "Thread: " << omp_get_thread_num() << endl;
+                printQueueElem(myElem);
             }
             
 
@@ -178,6 +210,7 @@ pair<vector <int>, double> tsp() {
                 }
             }else
                 create_children(myElem, myQueue, mins);
+
         }while(myQueue.size() > 0);
     }
 
