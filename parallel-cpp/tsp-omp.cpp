@@ -1,6 +1,5 @@
 #include "tsp-omp.h"
 
-#define NUM_SWAPS 3
 #define NUM_ITERATIONS 30
 
 int main(int argc, char *argv[]) {
@@ -209,10 +208,9 @@ pair<vector <int>, double> tsp() {
                 #pragma omp critical(queues_access)
                 {
                     for(int i=0; i<num_threads; i++) {
-                        if(queues[i].size() > num_threads) {
+                        if(!queues[i].empty()) {
                             QueueElem myElem = queues[i].pop();
                             queues[tid].push(myElem);
-                            break;
                         }
                     }
                 }
