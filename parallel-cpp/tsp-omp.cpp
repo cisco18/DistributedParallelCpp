@@ -202,17 +202,17 @@ pair<vector <int>, double> tsp() {
 
             #pragma omp barrier
             
-            int num_swaps = queues[tid].size()/num_threads;
-            if(num_swaps > numRoads)
-                num_swaps = numRoads;
+            // int num_swaps = queues[tid].size()/num_threads;
+            // if(num_swaps > numRoads)
+            //     num_swaps = numRoads;
 
             #pragma omp critical(queues_access)
             {
                 // cout << "Thread: " << tid << " Size: " << queues[tid].size() << " Swap: " << num_swaps << endl << endl;
-                if (num_swaps > 0) {
+                if (queues[tid].size()/num_threads > 4) {
                     for(int i=0; i<num_threads; i++) {
                         if(i != tid) {
-                            for (int j=0; j<num_swaps; j++){                           
+                            for (int j=0; j<4; j++){                           
                                 QueueElem myElem = queues[tid].pop();
                                 queues[i].push(myElem);
                             }
