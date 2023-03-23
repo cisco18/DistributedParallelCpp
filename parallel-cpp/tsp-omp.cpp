@@ -119,8 +119,9 @@ void create_children(PriorityQueue<QueueElem> &mainQueue, QueueElem &myElem, Pri
             if(newBound <= BestTourCost) {
                 vector <int> newTour = myElem.tour;
                 newTour.push_back(v);
-                if(mainQueue.size() <= omp_get_num_threads()) {
-                    mainQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                if(mainQueue.size() <= omp_get_max_threads()) {
+                    #pragma omp critical(mainQueue_access)
+                        mainQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
                 }else
                     myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
@@ -157,8 +158,6 @@ pair<vector <int>, double> tsp() {
             create_children(mainQueue, myElem, mainQueue, mins);
     }
 
-    // mainQueue.print(printQueueElem);
-
     #pragma omp parallel
     {
         PriorityQueue<QueueElem> myQueue;
@@ -166,21 +165,18 @@ pair<vector <int>, double> tsp() {
 
         #pragma omp critical(mainQueue_access)
             myElem = mainQueue.pop();
-
-        // #pragma omp critical(print)
-        // {
-        //     cout << "Thread " << omp_get_thread_num() << " popped!" << endl;
-        //     printQueueElem(myElem);
-        // }
-        
         myQueue.push(myElem);
 
         while(mainQueue.size() > 0 || myQueue.size() > 0) {
-            myElem = myQueue.pop();
+            if(myQueue.size() == 0) {
+                #pragma omp critical(mainQueue_access)
+                    myElem = mainQueue.pop();
+            }else
+                myElem = myQueue.pop();
 
             if(myElem.bound >= BestTourCost) {
-                #pragma omp cancel parallel
-                break;
+                myQueue.clear();
+                continue;
             }
 
             if(myElem.length == numCities) {
@@ -196,14 +192,7 @@ pair<vector <int>, double> tsp() {
                     }
                 }
             }else
-                #pragma omp critical(mainQueue_access)
-                    create_children(mainQueue, myElem, myQueue, mins);
-
-            if (myQueue.size() == 0) {
-                #pragma omp critical(mainQueue_access)
-                    myElem = mainQueue.pop();
-                myQueue.push(myElem);
-            }
+                create_children(mainQueue, myElem, myQueue, mins);
         }
     }
     
