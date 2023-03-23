@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
 
     exec_time += omp_get_wtime();
 
-    cout << "Serial execution time: " << exec_time << endl;
+    cout << "Execution time: " << exec_time << endl;
 
     print_result(results.first, results. second); // to the stdout!
 
@@ -105,7 +105,7 @@ double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
     return LB + directCost - (cf+ct)/2;
 }
 
-void create_children(PriorityQueue<QueueElem> &mainQueue, QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vector<pair<double,double>> &mins) {
+void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vector<pair<double,double>> &mins) {
     bool visitedCities[numCities] = {false};
 
     for (int city : myElem.tour) {
@@ -119,83 +119,110 @@ void create_children(PriorityQueue<QueueElem> &mainQueue, QueueElem &myElem, Pri
             if(newBound <= BestTourCost) {
                 vector <int> newTour = myElem.tour;
                 newTour.push_back(v);
-                if(mainQueue.size() <= omp_get_max_threads()) {
-                    #pragma omp critical(mainQueue_access)
-                        mainQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
-                }else
-                    myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                myQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
         }
     }
 }
 
-pair<vector <int>, double> tsp() {
-    PriorityQueue<QueueElem> mainQueue;
-
-    vector <int> BestTour = {0};
-    BestTour.reserve(numCities+1);
-
-    vector<pair<double,double>> mins = get_mins();
-
-    mainQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
-    
-    while(mainQueue.size() < omp_get_max_threads()) {
-        QueueElem myElem = mainQueue.pop();
-
-        if(myElem.bound >= BestTourCost)
-            return make_pair(BestTour, BestTourCost);
-
-        if(myElem.length == numCities) {
-            double dist = distances[myElem.node][0];
-            if(dist > 0) {
-                if(myElem.cost + dist <= BestTourCost) {
-                    BestTour = myElem.tour;
-                    BestTour.push_back(0);
-                    BestTourCost = myElem.cost + dist;
-                }
-            }
-        }else 
-            create_children(mainQueue, myElem, mainQueue, mins);
-    }
-
-    #pragma omp parallel
-    {
-        PriorityQueue<QueueElem> myQueue;
-        QueueElem myElem;
-
-        #pragma omp critical(mainQueue_access)
-            myElem = mainQueue.pop();
-        myQueue.push(myElem);
-
-        while(mainQueue.size() > 0 || myQueue.size() > 0) {
-            if(myQueue.size() == 0) {
-                #pragma omp critical(mainQueue_access)
-                    myElem = mainQueue.pop();
-            }else
-                myElem = myQueue.pop();
+void function(PriorityQueue<QueueElem> &myQueue, vector<int> &BestTour, vector<pair<double,double>> &mins) {
+    for(int iter=0; iter<numRoads; iter++){
+        if(myQueue.size() > 0) {
+            QueueElem myElem = myQueue.pop();
 
             if(myElem.bound >= BestTourCost) {
                 myQueue.clear();
-                continue;
             }
 
             if(myElem.length == numCities) {
                 double dist = distances[myElem.node][0];
                 if(dist > 0) {
-                    #pragma omp critical(bests)
-                    {
-                        if(myElem.cost + dist <= BestTourCost) {
+                    if(myElem.cost + dist <= BestTourCost) {
+                        #pragma omp critical(access_best)
+                        {
                             BestTour = myElem.tour;
                             BestTour.push_back(0);
                             BestTourCost = myElem.cost + dist;
                         }
                     }
                 }
-            }else
-                create_children(mainQueue, myElem, myQueue, mins);
+            }else 
+                create_children(myElem, myQueue, mins);
         }
     }
-    
+}
+
+pair<vector <int>, double> tsp() {
+    int num_threads = omp_get_max_threads();
+    vector <int> BestTour = {0};
+    BestTour.reserve(numCities+1);
+
+    vector<pair<double,double>> mins = get_mins();
+
+    QueueElem myElem = {{0}, 0.0, initialLB(mins), 1, 0};
+
+    vector <PriorityQueue<QueueElem>> queues;
+    queues.reserve(num_threads);
+
+    int cnt = 0;
+    bool visitedCities[numCities] = {false};
+
+    while(cnt < num_threads) {
+        for (int city : myElem.tour) {
+            visitedCities[city] = true;
+        }
+        for(int v=0; v<numCities; v++) {
+            double dist = distances[myElem.node][v];
+            if(dist>0 && !visitedCities[v]) {
+                double newBound = calculateLB(mins, myElem.node, v, myElem.bound);
+                vector <int> newTour = myElem.tour;
+                newTour.push_back(v);
+                if(cnt < num_threads) {
+                    PriorityQueue<QueueElem> newQueue;
+                    newQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                    queues.push_back(newQueue);
+                } else
+                    queues[cnt%num_threads].push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                cnt++;
+            }
+        }
+        if(cnt < num_threads) {
+            cnt--;
+            myElem = queues[cnt].pop();
+            queues.pop_back();
+        }
+    }
+
+    #pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        int myflag;
+        while(queues[tid].size() > 0) {
+            function(queues[tid], BestTour, mins);
+
+            #pragma omp barrier
+            
+            int num_swaps = queues[tid].size()/num_threads;
+            if(num_swaps > numRoads)
+                num_swaps = numRoads;
+
+            #pragma omp critical(queues_access)
+            {
+                // cout << "Thread: " << tid << " Size: " << queues[tid].size() << " Swap: " << num_swaps << endl << endl;
+                if (num_swaps > 0) {
+                    for(int i=0; i<num_threads; i++) {
+                        if(i != tid) {
+                            for (int j=0; j<num_swaps; j++){                           
+                                QueueElem myElem = queues[tid].pop();
+                                queues[i].push(myElem);
+                            }
+                        }
+                    }
+                }
+            }
+            #pragma omp barrier
+        }
+    }
 
     return make_pair(BestTour, BestTourCost);
 }
