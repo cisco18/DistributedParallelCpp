@@ -209,7 +209,7 @@ pair<vector <int>, double> tsp() {
                 #pragma omp critical(queues_access)
                 {
                     for(int i=0; i<num_threads; i++) {
-                        if(!queues[i].size() > num_threads) {
+                        if(queues[i].size() > num_threads) {
                             QueueElem myElem = queues[i].pop();
                             queues[tid].push(myElem);
                             break;
