@@ -224,7 +224,11 @@ pair<vector <int>, double> tsp() {
                     done = false;
                 }
             }
+            // #pragma omp critical(print)
+            //     cout << "Thread: " << tid << " Size: " << queues[tid].size() << endl;
             #pragma omp barrier
+            // #pragma omp single
+            //     cout << endl;
         }
     }
 
