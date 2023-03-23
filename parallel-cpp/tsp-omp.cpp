@@ -1,5 +1,8 @@
 #include "tsp-omp.h"
 
+#define NUM_SWAPS 3
+#define NUM_ITERATIONS 30
+
 int main(int argc, char *argv[]) {
     double exec_time;
 
@@ -125,29 +128,30 @@ void create_children(QueueElem &myElem, PriorityQueue<QueueElem> &myQueue, vecto
     }
 }
 
-void function(PriorityQueue<QueueElem> &myQueue, vector<int> &BestTour, vector<pair<double,double>> &mins) {
-    for(int iter=0; iter<numRoads; iter++){
+void TSPBB(PriorityQueue<QueueElem> &myQueue, vector<int> &BestTour, vector<pair<double,double>> &mins) {
+    #pragma omp for
+    for(int iter=0; iter<NUM_ITERATIONS; iter++){
         if(myQueue.size() > 0) {
             QueueElem myElem = myQueue.pop();
 
             if(myElem.bound >= BestTourCost) {
                 myQueue.clear();
-            }
-
-            if(myElem.length == numCities) {
-                double dist = distances[myElem.node][0];
-                if(dist > 0) {
-                    if(myElem.cost + dist <= BestTourCost) {
-                        #pragma omp critical(access_best)
-                        {
-                            BestTour = myElem.tour;
-                            BestTour.push_back(0);
-                            BestTourCost = myElem.cost + dist;
+            }else {
+                if(myElem.length == numCities) {
+                    double dist = distances[myElem.node][0];
+                    if(dist > 0) {
+                        if(myElem.cost + dist <= BestTourCost) {
+                            #pragma omp critical(access_best)
+                            {
+                                BestTour = myElem.tour;
+                                BestTour.push_back(0);
+                                BestTourCost = myElem.cost + dist;
+                            }
                         }
                     }
-                }
-            }else 
-                create_children(myElem, myQueue, mins);
+                }else 
+                    create_children(myElem, myQueue, mins);
+            }
         }
     }
 }
@@ -193,31 +197,31 @@ pair<vector <int>, double> tsp() {
         }
     }
 
+    bool done = false;
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
-        int myflag;
-        while(queues[tid].size() > 0) {
-            function(queues[tid], BestTour, mins);
+        while(!done) {
+            TSPBB(queues[tid], BestTour, mins);
+            done = true;
 
-            #pragma omp barrier
-            
-            // int num_swaps = queues[tid].size()/num_threads;
-            // if(num_swaps > numRoads)
-            //     num_swaps = numRoads;
-
-            #pragma omp critical(queues_access)
-            {
-                // cout << "Thread: " << tid << " Size: " << queues[tid].size() << " Swap: " << num_swaps << endl << endl;
-                if (queues[tid].size()/num_threads > 4) {
+            if(queues[tid].empty()) {
+                #pragma omp critical(queues_access)
+                {
                     for(int i=0; i<num_threads; i++) {
-                        if(i != tid) {
-                            for (int j=0; j<4; j++){                           
-                                QueueElem myElem = queues[tid].pop();
-                                queues[i].push(myElem);
-                            }
+                        if(!queues[i].size() > num_threads) {
+                            QueueElem myElem = queues[i].pop();
+                            queues[tid].push(myElem);
+                            break;
                         }
                     }
+                }
+            }
+
+            #pragma omp reduction(&&:done)
+            {
+                if(!queues[tid].empty()) {
+                    done = false;
                 }
             }
             #pragma omp barrier
