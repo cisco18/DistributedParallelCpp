@@ -1,6 +1,7 @@
 #include "tsp-omp.h"
 
-#define NUM_ITERATIONS 30
+#define NUM_ITERATIONS 50
+#define NUM_SWAPS 10
 
 int main(int argc, char *argv[]) {
     double exec_time;
@@ -155,6 +156,21 @@ void TSPBB(PriorityQueue<QueueElem> &myQueue, vector<int> &BestTour, vector<pair
     }
 }
 
+void share_queue_elements(int tid, int num_threads, vector <PriorityQueue<QueueElem>> &queues) {
+    #pragma omp critical(queues_access)
+    {
+        for(int i=0; i<num_threads; i++) {
+            if(queues[i].size() > num_threads*NUM_SWAPS) { //!queues[i].empty
+                for(int j=0; j<NUM_SWAPS; j++) {
+                    QueueElem myElem = queues[i].pop();
+                    queues[tid].push(myElem);
+                }
+                break;
+            }
+        }
+    }
+}
+
 pair<vector <int>, double> tsp() {
     int num_threads = omp_get_max_threads();
     vector <int> BestTour = {0};
@@ -204,16 +220,8 @@ pair<vector <int>, double> tsp() {
             TSPBB(queues[tid], BestTour, mins);
             done = true;
 
-            if(queues[tid].empty()) {
-                #pragma omp critical(queues_access)
-                {
-                    for(int i=0; i<num_threads; i++) {
-                        if(!queues[i].empty()) {
-                            QueueElem myElem = queues[i].pop();
-                            queues[tid].push(myElem);
-                        }
-                    }
-                }
+            if(queues[tid].size() < NUM_ITERATIONS) {
+                share_queue_elements(tid, num_threads, queues);
             }
 
             #pragma omp reduction(&&:done)
