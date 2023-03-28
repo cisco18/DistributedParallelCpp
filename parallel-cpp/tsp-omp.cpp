@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
     exec_time += omp_get_wtime();
 
-    cout << "Execution time: " << exec_time << endl;
+    fprintf(stderr, "%.1fs\n", exec_time);
 
     print_result(results.first, results. second); // to the stdout!
 
@@ -230,11 +230,7 @@ pair<vector <int>, double> tsp() {
                     done = false;
                 }
             }
-            // #pragma omp critical(print)
-            //     cout << "Thread: " << tid << " Size: " << queues[tid].size() << endl;
             #pragma omp barrier
-            // #pragma omp single
-            //     cout << endl;
         }
     }
 
