@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[]) {
     MPI_Status status;
-    int pid, p,
+    int pid, p;
     double exec_time;
 
     MPI_Init (&argc, &argv);
