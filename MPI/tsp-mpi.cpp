@@ -1,20 +1,32 @@
 #include "tsp-mpi.h"
 
 int main(int argc, char *argv[]) {
+    MPI_Status status;
+    int pid, p,
     double exec_time;
+
+    MPI_Init (&argc, &argv);
+
+    // get process id
+    MPI_Comm_rank (MPI_COMM_WORLD, &pid);
+    // get number of processes
+    MPI_Comm_size (MPI_COMM_WORLD, &p);
 
     parse_inputs(argc, argv);
 
-    exec_time = -omp_get_wtime();
+    MPI_Barrier (MPI_COMM_WORLD);
+    exec_time = - MPI_Wtime();
 
     pair<vector <int>, double> results = tsp();
 
-    exec_time += omp_get_wtime();
+    MPI_Barrier (MPI_COMM_WORLD);
+    exec_time += MPI_Wtime();
 
     cout << "Execution time: " << exec_time << endl;
 
     print_result(results.first, results. second); // to the stdout!
 
+    MPI_Finalize();
     return 0;
 }
 
