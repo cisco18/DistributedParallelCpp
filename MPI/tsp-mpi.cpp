@@ -15,19 +15,20 @@ int main(int argc, char *argv[]) {
 
     if(rank == 0) {
         parse_inputs(argc, argv);
-
-        for(int i=0; i<numCities; i++) {
-            for(int j=0; j<numCities; j++) {
-                cout << distances[i][j] << " ";
-            }
-            cout << endl;
-        }
     }
 
     //MPI_Bcast sends the message from the root process to all other processes
     MPI_Bcast(&numCities, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&numRoads, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&BestTourCost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_BCast(&distances, 1, sizeof(vector <vector <double>>), 0, MPI_COMM_WORLD);
+
+    if(rank == 1) {
+        for(int j=0; j<numCities; j++) {
+            cout << distances[i][j] << " ";
+        }
+        cout << endl;
+    }
 
     // divide work among processes
     int start = rank * numCities / num_processes;
