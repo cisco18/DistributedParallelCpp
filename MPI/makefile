@@ -8,10 +8,10 @@
 all: tsp-mpi tsp-mpi.o
 
 tsp-mpi.o: tsp-mpi.cpp tsp-mpi.h
-	g++ -c -O3 -fopenmp tsp-mpi.cpp
+	mpic++ -g -o tsp-mpi.cpp
 
 tsp-mpi: tsp-mpi.o
-	g++ -g -Wall -O3 -o tsp-mpi -fopenmp tsp-mpi.o
+	mpic++ -g -o tsp-mpi tsp-mpi.cpp
 
 clean:
 	-rm -f tsp-mpi *.o
