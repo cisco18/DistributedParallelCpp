@@ -6,7 +6,7 @@
 int main(int argc, char *argv[]) {
     double exec_time;
 
-    omp_set_num_threads(2);
+    // omp_set_num_threads(2);
     
     int num_processes, rank;
     MPI_Init(&argc, &argv);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     // calculate tsp
     double start_time = MPI_Wtime();
-    pair<vector<int>, double> results = make_pair({0}, 0.0);//tsp(start, end, rank);
+    pair<vector<int>, double> results = make_pair(vector<int> {0}, 0.0);//tsp(start, end, rank);
     double end_time = MPI_Wtime();
 
     // gather results
