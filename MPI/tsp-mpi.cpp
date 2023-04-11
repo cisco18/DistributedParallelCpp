@@ -1,30 +1,64 @@
 #include "tsp-mpi.h"
 
+#define NUM_SWAPS 3
+#define NUM_ITERATIONS 30
+
 int main(int argc, char *argv[]) {
-    MPI_Status status;
-    int pid, p;
     double exec_time;
 
-    MPI_Init (&argc, &argv);
+    omp_set_num_threads(2);
+    
+    int num_processes, rank;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    // get process id
-    MPI_Comm_rank (MPI_COMM_WORLD, &pid);
-    // get number of processes
-    MPI_Comm_size (MPI_COMM_WORLD, &p);
+    if(rank == 0) {
+        parse_inputs(argc, argv);
 
-    parse_inputs(argc, argv);
+        for(int i=0; i<numCities; i++) {
+            for(int j=0; j<numCities; j++) {
+                cout << distances[i][j] << " ";
+            }
+            cout << endl;
+        }
+    }
 
-    MPI_Barrier (MPI_COMM_WORLD);
-    exec_time = - MPI_Wtime();
+    //MPI_Bcast sends the message from the root process to all other processes
+    MPI_Bcast(&numCities, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&numRoads, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&BestTourCost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    pair<vector <int>, double> results = tsp();
+    // divide work among processes
+    int start = rank * numCities / num_processes;
+    int end = (rank + 1) * numCities / num_processes;
 
-    MPI_Barrier (MPI_COMM_WORLD);
-    exec_time += MPI_Wtime();
+    // calculate tsp
+    double start_time = MPI_Wtime();
+    pair<vector<int>, double> results = make_pair({0}, 0.0);//tsp(start, end, rank);
+    double end_time = MPI_Wtime();
 
-    cout << "Execution time: " << exec_time << endl;
+    // gather results
+    //MPI_Gather collects data from all processes in the communicator comm, and sends it to the root process
+    vector<pair<vector<int>, double>> all_results(num_processes);
+    MPI_Gather(&results, sizeof(pair<vector<int>, double>), MPI_BYTE,
+               &all_results[0], sizeof(pair<vector<int>, double>), MPI_BYTE,
+               0, MPI_COMM_WORLD);
 
-    print_result(results.first, results. second); // to the stdout!
+    if(rank == 0) {
+        exec_time = end_time - start_time;
+        cout << "Execution time: " << exec_time << endl;
+
+        // find best result
+        pair<vector<int>, double> best_result = all_results[0];
+        for(int i=1; i<num_processes; i++) {
+            if(all_results[i].second < best_result.second) {
+                best_result = all_results[i];
+            }
+        }
+
+        print_result(best_result.first, best_result.second);
+    }
 
     MPI_Finalize();
     return 0;
