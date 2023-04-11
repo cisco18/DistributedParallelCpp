@@ -21,14 +21,16 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(&numCities, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&numRoads, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&BestTourCost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_BCast(&distances, 1, sizeof(vector <vector <double>>), 0, MPI_COMM_WORLD);
 
-    if(rank == 1) {
-        for(int j=0; j<numCities; j++) {
-            cout << distances[i][j] << " ";
+    if(rank != 0) {
+        cout << rank << endl;
+        distances.resize(numCities);
+        for(int i=0; i<numCities; i++) {
+            distances[i].resize(numCities);
         }
-        cout << endl;
     }
+
+    MPI_Bcast(&distances[0][0], distances.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // divide work among processes
     int start = rank * numCities / num_processes;
@@ -36,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     // calculate tsp
     double start_time = MPI_Wtime();
-    pair<vector<int>, double> results = make_pair(vector<int> {0}, 0.0);//tsp(start, end, rank);
+    pair<vector<int>, double> results = make_pair(vector<int> {0}, distances[0][rank+1]);//tsp(start, end, rank);
     double end_time = MPI_Wtime();
 
     // gather results
@@ -46,6 +48,7 @@ int main(int argc, char *argv[]) {
                &all_results[0], sizeof(pair<vector<int>, double>), MPI_BYTE,
                0, MPI_COMM_WORLD);
 
+    MPI_Barrier(MPI_COMM_WORLD);
     if(rank == 0) {
         exec_time = end_time - start_time;
         cout << "Execution time: " << exec_time << endl;
