@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
     //MPI_Gather collects data from all processes in the communicator comm, and sends it to the root process
     vector<pair<vector<int>, double>> all_results(num_processes);
     all_results.resize(num_processes);
-    MPI_Gather(&results, sizeof(results), MPI_BYTE,
-               &all_results[0], sizeof(all_results), MPI_BYTE,
+    MPI_Gather(&results, sizeof(pair<vector<int>, double>), MPI_BYTE,
+               &all_results[0], sizeof(vector<pair<vector<int>, double>>), MPI_BYTE,
                0, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
