@@ -23,7 +23,6 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(&BestTourCost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if(rank != 0) {
-        cout << rank << endl;
         distances.resize(numCities);
         for(int i=0; i<numCities; i++) {
             distances[i].resize(numCities);
@@ -44,8 +43,9 @@ int main(int argc, char *argv[]) {
     // gather results
     //MPI_Gather collects data from all processes in the communicator comm, and sends it to the root process
     vector<pair<vector<int>, double>> all_results(num_processes);
-    MPI_Gather(&results, sizeof(pair<vector<int>, double>), MPI_BYTE,
-               &all_results[0], sizeof(pair<vector<int>, double>), MPI_BYTE,
+    all_results.resize(num_processes);
+    MPI_Gather(&results, sizeof(results), MPI_BYTE,
+               &all_results[0], sizeof(all_results), MPI_BYTE,
                0, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
