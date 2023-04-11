@@ -37,13 +37,14 @@ int main(int argc, char *argv[]) {
 
     // calculate tsp
     double start_time = MPI_Wtime();
-    pair<vector<int>, double> results = make_pair(vector<int> {0}, distances[0][rank+1]);//tsp(start, end, rank);
+    pair<vector<int>, double> results = tsp(start, end, rank);
     double end_time = MPI_Wtime();
 
     // gather results
     //MPI_Gather collects data from all processes in the communicator comm, and sends it to the root process
-    vector<pair<vector<int>, double>> all_results(num_processes);
+    vector<pair<vector<int>, double>> all_results;
     all_results.resize(num_processes);
+    // Define the pair data type
     MPI_Gather(&results, sizeof(pair<vector<int>, double>), MPI_BYTE,
                &all_results[0], sizeof(vector<pair<vector<int>, double>>), MPI_BYTE,
                0, MPI_COMM_WORLD);
