@@ -38,3 +38,6 @@ run_all:
 	srun -n $(NUM_PROCESSES) tsp-mpi gen26-50000.in 50000
 	@echo gen30
 	srun -n $(NUM_PROCESSES) tsp-mpi gen30-5000.in 5000
+
+run_local:
+	mpirun -n $(NUM_PROCESSES) tsp-mpi $(FILE) $(VAL)
