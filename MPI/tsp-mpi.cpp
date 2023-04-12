@@ -38,22 +38,15 @@ int main(int argc, char *argv[]) {
     
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // int elemsPerProcess = startElems.size() / num_processes;
-    // vector<QueueElem> myElems;
-    // myElems.resize(elemsPerProcess);
+    int elemsPerProcess = startElems.size() / num_processes;
+    PriorityQueue<QueueElem> myElems;
 
-    // MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
-    //             &myElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
-    //             0, MPI_COMM_WORLD);
+    MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(PriorityQueue<QueueElem>), MPI_BYTE,
+                &myElems[0], elemsPerProcess*sizeof(PriorityQueue<QueueElem>), MPI_BYTE,
+                0, MPI_COMM_WORLD);
 
-    // PriorityQueue<QueueElem> myQueue;
-    // while(!myElems.empty()) {
-    //     myQueue.push(myElems[-1]);
-    //     myElems.pop_back();
-    // }
-
-    // if(rank == 0)
-    //     myQueue.print(printQueueElem);
+    if(rank == 0)
+        myElems.print(printQueueElem);
     
 
     // divide work among processes
