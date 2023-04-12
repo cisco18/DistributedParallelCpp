@@ -171,6 +171,10 @@ vector<QueueElem> split_work(int num_processes) {
             }
         }
     }
+    for (int i = 0; i < startElems.size(); i++) {
+        printQueueElem(startElems[i]);
+    }
+    
     return startElems;
 }
 
