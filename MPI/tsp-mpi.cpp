@@ -31,6 +31,27 @@ int main(int argc, char *argv[]) {
 
     MPI_Bcast(&distances[0][0], distances.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+    // split initial workload
+    vector<QueueElem> startElems;
+    if(rank == 0)
+        startElems = split_work(num_processes);
+
+    int elemsPerProcess = startElems.size() / num_processes;
+    vector<QueueElem> myElems;
+    myElems.resize(elemsPerProcess);
+
+    MPI_Scatter(startElems, elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+                myElems, elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+                0, MPI_COMM_WORLD);
+
+    PriorityQueue<QueueElem> myQueue;
+    for(int i=0; i<myElems.size(); i++)
+        myQueue.push(myElems.pop_back());
+
+    if(rank == 0)
+        myQueue.print(printQueueElem);
+    
+
     // divide work among processes
     int start = rank * numCities / num_processes;
     int end = (rank + 1) * numCities / num_processes;
@@ -120,4 +141,84 @@ pair<vector <int>, double> tsp() {
     vector <int> BestTour = {0};
     
     return make_pair(BestTour, BestTourCost);
+}
+
+void split_work(int num_processes) {
+    vector<pair<double,double>> mins = get_mins();
+
+    vector<QueueElem> startElems;
+    startElems.reserve(numCities);
+    startElems.push_back({{0}, 0.0, initialLB(mins), 1, 0});
+
+    while(startElems.size() < num_processes) {
+        QueueElem myElem = startElems.pop_back();
+
+        bool visitedCities[numCities] = {false};
+        for (int city : myElem.tour) {
+            visitedCities[city] = true;
+        }
+
+        for(int v=0; v<numCities; v++) {
+            double dist = distances[myElem.node][v];
+            if(dist>0 && !visitedCities[v]) {
+                double newBound = calculateLB(mins, myElem.node, v, myElem.bound);
+                vector <int> newTour = myElem.tour;
+                newTour.push_back(v);
+                startElems.push_back({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+            }
+        }
+    }
+}
+
+vector<pair<double,double>> get_mins() {
+    vector<pair<double,double>> mins;
+    mins.reserve(numCities);
+
+    for (int i=0; i<numCities; i++) {
+        double min1 = BestTourCost;
+        double min2 = BestTourCost;
+        for (int j=0; j<numCities; j++) {
+            double dist = distances[i][j];
+            if(dist > 0) {
+                if(dist <= min1) {
+                    min2 = min1;
+                    min1 = dist;
+                }else if(dist <= min2) {
+                    min2 = dist;
+                }
+            }
+        }
+        mins[i] = make_pair(min1, min2);
+    }
+
+    return mins;
+}
+
+double initialLB(vector<pair<double,double>> &mins) {
+    double LB=0;
+
+    for(int i=0; i<numCities; i++) {
+        LB += (mins[i].first + mins[i].second)/2;
+    }
+    return LB;
+}
+
+double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB) {
+    double cf, ct;
+    double directCost = distances[f][t];
+
+    if(distances[f][t] <= 0)
+        exit(-1);
+
+    if(directCost >= mins[f].second) {
+        cf = mins[f].second;
+    }else
+        cf = mins[f].first;
+
+    if(directCost >= mins[t].second) {
+        ct = mins[t].second;
+    }else
+        ct = mins[t].first;
+
+    return LB + directCost - (cf+ct)/2;
 }
