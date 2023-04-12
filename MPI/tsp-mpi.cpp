@@ -32,56 +32,34 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(&distances[0][0], distances.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // split initial workload
-    PriorityQueue<QueueElem> startElems;
+    vector<QueueElem> startElems;
     if(rank == 0)
         startElems = split_work(num_processes);
-    
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     int elemsPerProcess = startElems.size() / num_processes;
-    PriorityQueue<QueueElem> myElems;
+    vector<QueueElem> myElems;
 
-    MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(PriorityQueue<QueueElem>), MPI_BYTE,
-                &myElems[0], elemsPerProcess*sizeof(PriorityQueue<QueueElem>), MPI_BYTE,
+    MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+                &myElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
                 0, MPI_COMM_WORLD);
 
-    if(rank == 0)
-        myElems.print(printQueueElem);
-    
-
-    // divide work among processes
-    // int start = rank * numCities / num_processes;
-    // int end = (rank + 1) * numCities / num_processes;
+    PriorityQueue<QueueElem> myQueue;
+    while(!myElems.empty()) {
+        myQueue.push(myElems[-1]);
+        myElems.pop_back();
+    }
+    if(rank == 1)
+        myQueue.print(printQueueElem);
 
     // calculate tsp
     double start_time = MPI_Wtime();
     pair<vector<int>, double> results = tsp();
     double end_time = MPI_Wtime();
 
-    // gather results
-    //MPI_Gather collects data from all processes in the communicator comm, and sends it to the root process
-    vector<pair<vector<int>, double>> all_results;
-    all_results.resize(num_processes);
-    // Define the pair data type
-    MPI_Gather(&results, sizeof(pair<vector<int>, double>), MPI_BYTE,
-               &all_results[0], sizeof(vector<pair<vector<int>, double>>), MPI_BYTE,
-               0, MPI_COMM_WORLD);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    if(rank == 0) {
-        exec_time = end_time - start_time;
-        cout << "Execution time: " << exec_time << endl;
-
-        // find best result
-        pair<vector<int>, double> best_result = all_results[0];
-        for(int i=1; i<num_processes; i++) {
-            if(all_results[i].second < best_result.second) {
-                best_result = all_results[i];
-            }
-        }
-
-        print_result(best_result.first, best_result.second);
-    }
+   //  print_result(best_result.first, best_result.second);
 
     MPI_Finalize();
     return 0;
@@ -140,14 +118,14 @@ pair<vector <int>, double> tsp() {
     return make_pair(BestTour, BestTourCost);
 }
 
-PriorityQueue<QueueElem> split_work(int num_processes) {
+vector<QueueElem> split_work(int num_processes) {
     vector<pair<double,double>> mins = get_mins();
 
-    PriorityQueue<QueueElem> startElems;
-    startElems.push({{0}, 0.0, initialLB(mins), 1, 0});
+    PriorityQueue<QueueElem> startQueue;
+    startQueue.push({{0}, 0.0, initialLB(mins), 1, 0});
 
-    while(startElems.size() < num_processes) {
-        QueueElem myElem = startElems.pop();
+    while(startQueue.size() < num_processes) {
+        QueueElem myElem = startQueue.pop();
 
         bool visitedCities[numCities] = {false};
         for (int city : myElem.tour) {
@@ -160,11 +138,16 @@ PriorityQueue<QueueElem> split_work(int num_processes) {
                 double newBound = calculateLB(mins, myElem.node, v, myElem.bound);
                 vector <int> newTour = myElem.tour;
                 newTour.push_back(v);
-                startElems.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                startQueue.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
         }
     }
-    startElems.print(printQueueElem);
+
+    vector<QueueElem> startElems;
+    startElems.reserve(startQueue.size())
+    while (!startQueue.empty()){
+        startElems.push_back(startQueue.pop());
+    }
     
     return startElems;
 }
