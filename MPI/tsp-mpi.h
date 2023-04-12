@@ -17,7 +17,7 @@ void parse_inputs(int argc, char *argv[]);
 void print_result(vector <int> BestTour, double BestTourCost);
 pair<vector <int>, double> tsp();
 
-void split_work(int num_processes);
+vector<QueueElem> split_work(int num_processes);
 vector<pair<double,double>> get_mins();
 double initialLB(vector<pair<double,double>> &mins);
 double calculateLB(vector<pair<double,double>> &mins, int f, int t, double LB);

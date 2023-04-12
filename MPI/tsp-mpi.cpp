@@ -143,7 +143,7 @@ pair<vector <int>, double> tsp() {
     return make_pair(BestTour, BestTourCost);
 }
 
-void split_work(int num_processes) {
+vector<QueueElem> split_work(int num_processes) {
     vector<pair<double,double>> mins = get_mins();
 
     vector<QueueElem> startElems;
@@ -169,6 +169,7 @@ void split_work(int num_processes) {
             }
         }
     }
+    return startElems;
 }
 
 vector<pair<double,double>> get_mins() {
