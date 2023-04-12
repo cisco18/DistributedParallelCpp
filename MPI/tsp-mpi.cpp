@@ -32,28 +32,28 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(&distances[0][0], distances.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     // split initial workload
-    vector<QueueElem> startElems;
+    PriorityQueue<QueueElem> startElems;
     if(rank == 0)
         startElems = split_work(num_processes);
     
     MPI_Barrier(MPI_COMM_WORLD);
 
-    int elemsPerProcess = startElems.size() / num_processes;
-    vector<QueueElem> myElems;
-    myElems.resize(elemsPerProcess);
+    // int elemsPerProcess = startElems.size() / num_processes;
+    // vector<QueueElem> myElems;
+    // myElems.resize(elemsPerProcess);
 
-    MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
-                &myElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
-                0, MPI_COMM_WORLD);
+    // MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+    //             &myElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+    //             0, MPI_COMM_WORLD);
 
-    PriorityQueue<QueueElem> myQueue;
-    while(!myElems.empty()) {
-        myQueue.push(myElems[-1]);
-        myElems.pop_back();
-    }
+    // PriorityQueue<QueueElem> myQueue;
+    // while(!myElems.empty()) {
+    //     myQueue.push(myElems[-1]);
+    //     myElems.pop_back();
+    // }
 
-    if(rank == 0)
-        myQueue.print(printQueueElem);
+    // if(rank == 0)
+    //     myQueue.print(printQueueElem);
     
 
     // divide work among processes
@@ -147,16 +147,14 @@ pair<vector <int>, double> tsp() {
     return make_pair(BestTour, BestTourCost);
 }
 
-vector<QueueElem> split_work(int num_processes) {
+PriorityQueue<QueueElem> split_work(int num_processes) {
     vector<pair<double,double>> mins = get_mins();
 
-    vector<QueueElem> startElems;
-    startElems.reserve(numCities);
-    startElems.push_back({{0}, 0.0, initialLB(mins), 1, 0});
+    PriorityQueue<QueueElem> startElems;
+    startElems.push({{0}, 0.0, initialLB(mins), 1, 0});
 
     while(startElems.size() < num_processes) {
-        QueueElem myElem = startElems[-1];
-        startElems.pop_back();
+        QueueElem myElem = startElems.pop();
 
         bool visitedCities[numCities] = {false};
         for (int city : myElem.tour) {
@@ -169,13 +167,11 @@ vector<QueueElem> split_work(int num_processes) {
                 double newBound = calculateLB(mins, myElem.node, v, myElem.bound);
                 vector <int> newTour = myElem.tour;
                 newTour.push_back(v);
-                startElems.push_back({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
+                startElems.push({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
         }
-        for (int i = 0; i < startElems.size(); i++)
-        printQueueElem(startElems[i]);
-        cout << startElems.size() << endl << endl;
     }
+    startElems.print(printQueueElem);
     
     return startElems;
 }
