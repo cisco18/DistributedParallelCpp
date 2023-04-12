@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
                 0, MPI_COMM_WORLD);
 
     PriorityQueue<QueueElem> myQueue;
-    for(int i=0; i<myElems.size(); i++) {
+    while(!myElems.empty()) {
         myQueue.push(myElems[-1]);
         myElems.pop_back();
     }
