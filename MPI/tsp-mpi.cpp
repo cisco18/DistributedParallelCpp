@@ -45,8 +45,10 @@ int main(int argc, char *argv[]) {
                 0, MPI_COMM_WORLD);
 
     PriorityQueue<QueueElem> myQueue;
-    for(int i=0; i<myElems.size(); i++)
-        myQueue.push(myElems.pop_back());
+    for(int i=0; i<myElems.size(); i++) {
+        myQueue.push(myElems[-1]);
+        myElems.pop_back();
+    }
 
     if(rank == 0)
         myQueue.print(printQueueElem);
