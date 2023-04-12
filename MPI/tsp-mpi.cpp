@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
     vector<QueueElem> myElems;
     myElems.resize(elemsPerProcess);
 
-    MPI_Scatter(startElems, elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
-                myElems, elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+    MPI_Scatter(&startElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
+                &myElems[0], elemsPerProcess*sizeof(QueueElem), MPI_BYTE,
                 0, MPI_COMM_WORLD);
 
     PriorityQueue<QueueElem> myQueue;
@@ -53,12 +53,12 @@ int main(int argc, char *argv[]) {
     
 
     // divide work among processes
-    int start = rank * numCities / num_processes;
-    int end = (rank + 1) * numCities / num_processes;
+    // int start = rank * numCities / num_processes;
+    // int end = (rank + 1) * numCities / num_processes;
 
     // calculate tsp
     double start_time = MPI_Wtime();
-    pair<vector<int>, double> results = tsp(start, end, rank);
+    pair<vector<int>, double> results = tsp();
     double end_time = MPI_Wtime();
 
     // gather results
@@ -151,7 +151,8 @@ void split_work(int num_processes) {
     startElems.push_back({{0}, 0.0, initialLB(mins), 1, 0});
 
     while(startElems.size() < num_processes) {
-        QueueElem myElem = startElems.pop_back();
+        QueueElem myElem = startElems[-1];
+        startElems.pop_back();
 
         bool visitedCities[numCities] = {false};
         for (int city : myElem.tour) {
