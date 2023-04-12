@@ -153,9 +153,6 @@ vector<QueueElem> split_work(int num_processes) {
     vector<QueueElem> startElems;
     startElems.reserve(numCities);
     startElems.push_back({{0}, 0.0, initialLB(mins), 1, 0});
-    for (int i = 0; i < startElems.size(); i++)
-        printQueueElem(startElems[i]);
-    cout << startElems.size();
 
     while(startElems.size() < num_processes) {
         QueueElem myElem = startElems[-1];
@@ -175,6 +172,9 @@ vector<QueueElem> split_work(int num_processes) {
                 startElems.push_back({newTour, myElem.cost + dist, newBound, myElem.length+1, v});
             }
         }
+        for (int i = 0; i < startElems.size(); i++)
+        printQueueElem(startElems[i]);
+        cout << startElems.size() << endl << endl;
     }
     
     return startElems;
